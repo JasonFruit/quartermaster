@@ -3,14 +3,20 @@ BEGIN TRANSACTION;
 CREATE TABLE unit (
     id integer not null primary key,
     unit text,
-    dimension text
+    dimension text,
+    multiplier integer null,
+    ref_id integer null,
+    foreign key (ref_id) references unit(id)
 );
 
-INSERT INTO "unit" VALUES(1,'each', 'amount');
-INSERT INTO "unit" VALUES(2,'gallon', 'amount');
-INSERT INTO "unit" VALUES(3,'pound', 'amount');
-INSERT INTO "unit" VALUES(4,'month', 'time');
-INSERT INTO "unit" VALUES(5,'year', 'time');
+INSERT INTO "unit" VALUES(1,'each', 'amount', null, null);
+INSERT INTO "unit" VALUES(2,'fl. oz.', 'amount', null, null);
+INSERT INTO "unit" VALUES(3,'gallon', 'amount', 128, 2);
+INSERT INTO "unit" VALUES(4,'ounce.', 'amount', null, null);
+INSERT INTO "unit" VALUES(5,'pound', 'amount', 16, 4);
+INSERT INTO "unit" VALUES(6,'day', 'time', null, null);
+INSERT INTO "unit" VALUES(7,'month', 'time', 30, 6);
+INSERT INTO "unit" VALUES(8,'year', 'time', 365, 6);
 
 CREATE TABLE condition (
     id integer not null primary key,

@@ -1,6 +1,8 @@
 from sqlite3 import connect
 import codecs
-from datetime import datetime
+import math
+from datetime import datetime, timedelta
+from dateutil.parser import parse
 
 class Measurement(object):
     def __init__(self, number, unit):
@@ -10,6 +12,19 @@ class Measurement(object):
         return "%s %s(s)" % (self.number, self.unit)
     def to_string(self):
         return repr(self)
+    def __lt__(self, other):
+        return self.number < other.number
+    def __gt__(self, other):
+        return self.number > other.number
+    def __eq__(self, other):
+        return ((self.number == other.number) and
+                (self.unit == other.unit))
+    def __le__(self, other):
+        return self.number <= other.number
+    def __ge__(self, other):
+        return self.number >= other.number
+    def __ne__(self, other):
+        return not self.__eq__(other)
     
 add_inventory_sql = """insert into item (
     condition_id,
@@ -21,6 +36,17 @@ add_inventory_sql = """insert into item (
     record_type_id,
     purchase_date)
 values (?, ?, ?, ?, ?, ?, ?, ?);"""
+
+save_inventory_sql = """update item set
+condition_id = ?,
+item = ?,
+weight = ?,
+weight_unit_id = ?,
+life = ?,
+life_unit_id = ?,
+record_type_id = ?,
+purchase_date = ?
+where id = ?"""
 
 inventory_sql = """
 select i.id as id,
@@ -57,8 +83,32 @@ class InventoryItem(object):
         self.description = description
         self.amount = amount
         self.life = life
-        self.purchase_date = purchase_date
+        if type(purchase_date) == str:
+            self.purchase_date = parse(purchase_date)
+        else:
+            self.purchase_date = purchase_date
+    @property
+    def expiration_date(self):
+        if self.life.unit == "year":
+            return datetime(self.purchase_date.year + self.life.number,
+                            self.purchase_date.month,
+                            self.purchase_date.day)
+        elif self.life.unit == "month":
+            years = math.floor(self.life.number / 12) + self.purchase_date.year
+            months = self.life.number % 12 + self.purchase_date.month
 
+            while months > 12:
+                years += 1
+                months -= 12
+
+            return datetime(years,
+                            months,
+                            self.purchase_date.day)
+
+        elif self.life.unit == "day":
+            return self.purchase_date + timedelta(self.life.number)
+
+        
 class InventoryDB(object):
     def __init__(self, path):
         self.conn = connect(path)
@@ -91,7 +141,24 @@ class InventoryDB(object):
             sql = f.read()
         self.cur.execute(sql, (mult,))
         self.conn.commit()
-        
+
+    def save_inventory(self, item):
+        amount, amount_id = item.amount.number, self.amounts[item.amount.unit]
+        life, life_id = item.life.number, self.durations[item.life.unit]
+        rec_type_id = self.record_types["inventory"]
+        condition_id = self.conditions[item.condition]
+        self.cur.execute(save_inventory_sql,
+                         (condition_id,
+                          item.description,
+                          amount,
+                          amount_id,
+                          life,
+                          life_id,
+                          rec_type_id,
+                          item.purchase_date,
+                          item.id))
+        self.conn.commit()
+
     def add_inventory(self, item):
         amount, amount_id = item.amount.number, self.amounts[item.amount.unit]
         life, life_id = item.life.number, self.durations[item.life.unit]
