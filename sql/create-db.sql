@@ -47,6 +47,7 @@ CREATE TABLE item (
     life_unit_id integer,
     record_type_id integer,
     purchase_date datetime null,
+    expiration_date datetime null,
     foreign key (condition_id) references condition(id),
     foreign key (weight_unit_id) references unit(id),
     foreign key (life_unit_id) references unit(id),

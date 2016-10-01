@@ -1,3 +1,4 @@
+import os
 from sqlite3 import connect
 import codecs
 import math
@@ -34,8 +35,9 @@ add_inventory_sql = """insert into item (
     life,
     life_unit_id,
     record_type_id,
-    purchase_date)
-values (?, ?, ?, ?, ?, ?, ?, ?);"""
+    purchase_date,
+    expiration_date)
+values (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
 
 save_inventory_sql = """update item set
 condition_id = ?,
@@ -45,7 +47,8 @@ weight_unit_id = ?,
 life = ?,
 life_unit_id = ?,
 record_type_id = ?,
-purchase_date = ?
+purchase_date = ?,
+expiration_date = ?
 where id = ?"""
 
 inventory_sql = """
@@ -111,8 +114,18 @@ class InventoryItem(object):
         
 class InventoryDB(object):
     def __init__(self, path):
-        self.conn = connect(path)
-        self.cur = self.conn.cursor()
+
+        with open("sql/create-db.sql", "r") as f:
+            create_sql = f.read()
+
+        if os.path.exists(path):            
+            self.conn = connect(path)
+            self.cur = self.conn.cursor()
+        else:
+            self.conn = connect(path)
+            self.cur = self.conn.cursor()
+            self.cur.executescript(create_sql)
+            self.conn.commit()
 
         self.record_types = {}
         self.cur.execute("select id, description from recordtype")
@@ -156,6 +169,7 @@ class InventoryDB(object):
                           life_id,
                           rec_type_id,
                           item.purchase_date,
+                          item.expiration_date,
                           item.id))
         self.conn.commit()
 
@@ -172,7 +186,8 @@ class InventoryDB(object):
                           life,
                           life_id,
                           rec_type_id,
-                          item.purchase_date))
+                          item.purchase_date,
+                          item.expiration_date))
         self.conn.commit()
         item.id = self.cur.lastrowid
 
@@ -198,11 +213,6 @@ class InventoryDB(object):
         return output
 
 if __name__ == "__main__":
-    db = InventoryDB("inventory.db")
-    print(db.record_types, db.amounts, db.durations)
-    # db.set_goals(3.5)
-    item = InventoryItem(None, "Dry", "Pinto beans", Measurement(20, "pound"), Measurement(5, "year"), datetime(2016, 9, 28))
-    db.add_inventory(item)
-    
-    print(item.id)
-    print(db.all_inventory())
+    import sys
+    db = InventoryDB(sys.argv[1])
+    db.set_goals(3.5)

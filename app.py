@@ -197,16 +197,13 @@ class InventoryItemDialog(QDialog):
         self.setLayout(self.layout)
         
         
-class Quartermaster(QWidget):
+class Quartermaster(QMainWindow):
     def __init__(self):
-        QWidget.__init__(self)
-        self.setWindowTitle("Quartermaster: Survival Inventory Management")
+        QMainWindow.__init__(self)
+        self.filename = ""
+        self.setWindowTitle("Quartermaster")
         self.setMinimumWidth(400)
-
-        # self.db = InventoryDB("inventory.db")
-        
         self.addControls()
-        self.loadFile("inventory.db")
         self.showMaximized()
 
     def showEdit(self, selected, deselected):
@@ -223,6 +220,7 @@ class Quartermaster(QWidget):
 
     def loadFile(self, filename):
         self.filename = filename
+        self.setWindowTitle("Quartermaster (%s)" % self.filename)
         self.db = InventoryDB(self.filename)
         
         self.conditions = [str(key)
@@ -235,6 +233,23 @@ class Quartermaster(QWidget):
         self.items = self.db.all_inventory()
         self.set_model()
 
+    def browseOpenFile(self, *args, **kwargs):
+        fn, _ = QFileDialog.getOpenFileName(self, 'Open file', "", "*.qm")
+        if fn:
+            self.loadFile(fn)
+
+    def browseCreateFile(self, *args, **kwargs):
+        fn, _ = QFileDialog.getSaveFileName(self, 'New file', "", "*.qm")
+        if fn:
+            self.loadFile(fn)
+
+    def getRationNumber(self):
+        return 3.5
+
+    def setGoals(self):
+        multiplier = self.getRationNumber()
+        self.db.set_goals(multiplier)
+
     def set_model(self):
         self.inventory_model = InventoryListModel(self.inventory_table,
                                                   self.items)
@@ -243,9 +258,49 @@ class Quartermaster(QWidget):
         sm.selectionChanged.connect(self.showEdit)
         self.inventory_table.setColumnHidden(0, True)
         self.inventory_table.resizeColumnsToContents()
+
+    def setUpMenu(self):
+        menu_bar = self.menuBar()
+        
+        self.file_menu = menu_bar.addMenu("&File")
+        self.inventory_menu = menu_bar.addMenu("&Inventory")
+        self.help_menu = menu_bar.addMenu("&Help")
+        
+        createAction = QAction(QIcon('create.png'), '&New', self)
+        createAction.setShortcut('Ctrl+N')
+        createAction.setStatusTip('New inventory file')
+        createAction.triggered.connect(self.browseCreateFile)
+
+        self.file_menu.addAction(createAction)
+        
+        openAction = QAction(QIcon('open.png'), '&Open', self)
+        openAction.setShortcut('Ctrl+O')
+        openAction.setStatusTip('Open an inventory file')
+        openAction.triggered.connect(self.browseOpenFile)
+
+        self.file_menu.addAction(openAction)
+
+        exitAction = QAction(QIcon('exit.png'), '&Exit', self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.setStatusTip('Exit application')
+        exitAction.triggered.connect(self.close)
+
+        self.file_menu.addAction(exitAction)
+
+        setGoalAction = QAction(QIcon('set-goals.png'), 'Set &goals', self)
+        setGoalAction.setStatusTip('Set inventory goals')
+        setGoalAction.triggered.connect(self.setGoals)
+
+        self.inventory_menu.addAction(setGoalAction)
         
     def addControls(self):
-        self.layout = QVBoxLayout(self)
+        self.main_widget = QWidget()
+
+        self.setUpMenu()
+        
+        self.setCentralWidget(self.main_widget)
+
+        self.layout = QVBoxLayout(self.main_widget)
 
         self.inventory_table = QTableView()
         self.inventory_table.setSortingEnabled(True)
