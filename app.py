@@ -141,9 +141,10 @@ class InventoryItemDialog(QDialog):
         self.amount_combo.setCurrentIndex(self.amounts.index(self.item.amount.unit))
         self.life_text.setText(str(self.item.life.number))
         self.life_combo.setCurrentIndex(self.durations.index(self.item.life.unit))
-        self.purch_datepicker.setDate(QDate(self.item.purchase_date.year,
-                                            self.item.purchase_date.month,
-                                            self.item.purchase_date.day))
+        if self.item.purchase_date:
+            self.purch_datepicker.setDate(QDate(self.item.purchase_date.year,
+                                                self.item.purchase_date.month,
+                                                self.item.purchase_date.day))
 
     def _syncItemToControls(self):
         if self.item:
@@ -253,11 +254,14 @@ class Quartermaster(QMainWindow):
         self.setMinimumWidth(400)
         self.addControls()
         self.showMaximized()
+        self.lastRow = None
 
     def showEdit(self, selected, deselected):
         row = selected.indexes()[0].row()
-        frm = InventoryItemDialog(self, self.inventory_model.items[row])
-        frm.exec()
+        if row != self.lastRow:
+            self.lastRow = row
+            frm = InventoryItemDialog(self, self.inventory_model.items[row])
+            frm.exec()
 
     def showAdd(self, *args, **kwargs):
         frm = InventoryItemDialog(self, None)
@@ -277,8 +281,14 @@ class Quartermaster(QMainWindow):
                         for key in self.db.amounts.keys()]
         self.durations = [str(key)
                           for key in self.db.durations.keys()]
+        print(self.durations)
+        
+        self.record_types = [str(key)
+                             for key in self.db.record_types.keys()]
+        self.showItems()
 
-        self.items = self.db.all_inventory()
+    def showItems(self, *args):
+        self.items = self.db.all_inventory(self.view_combo.currentText().lower())
         self.set_model()
 
     def browseOpenFile(self, *args, **kwargs):
@@ -356,6 +366,12 @@ class Quartermaster(QMainWindow):
         self.setCentralWidget(self.main_widget)
 
         self.layout = QVBoxLayout(self.main_widget)
+
+        self.view_combo = QComboBox()
+        self.view_combo.addItems(["Inventory", "Goal"])
+        self.view_combo.currentIndexChanged.connect(self.showItems)
+        
+        self.layout.addWidget(self.view_combo)
 
         self.inventory_table = QTableView()
         self.inventory_table.setSortingEnabled(True)

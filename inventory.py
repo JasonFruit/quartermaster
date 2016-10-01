@@ -10,7 +10,10 @@ class Measurement(object):
         self.number = number
         self.unit = unit
     def __repr__(self):
-        return "%s %s(s)" % (self.number, self.unit)
+        if self.number == 1:
+            return "%s %s" % (self.number, self.unit)
+        else:
+            return "%s %ss" % (self.number, self.unit)
     def to_string(self):
         return repr(self)
     def __lt__(self, other):
@@ -92,6 +95,9 @@ class InventoryItem(object):
             self.purchase_date = purchase_date
     @property
     def expiration_date(self):
+        if not self.purchase_date:
+            return None
+        
         if self.life.unit == "year":
             return datetime(self.purchase_date.year + self.life.number,
                             self.purchase_date.month,
@@ -191,9 +197,17 @@ class InventoryDB(object):
         self.conn.commit()
         item.id = self.cur.lastrowid
 
-    def all_inventory(self):
-        self.cur.execute(inventory_sql, (self.record_types["inventory"],))
+    def all_inventory(self, record_type=None):
+
+        if not record_type:
+            record_type = "inventory"
+
+        record_type_id = self.record_types[record_type]
+            
+        self.cur.execute(inventory_sql, (record_type_id,))
+        
         output = []
+        
         for row in self.cur.fetchall():
             (id,
              condition,
