@@ -67,6 +67,54 @@ class InventoryListModel(QAbstractTableModel):
             
         self.emit(SIGNAL("layoutChanged()"))
 
+class MultSpinner(QHBoxLayout):
+    def __init__(self, label, multiplier):
+        QHBoxLayout.__init__(self)
+        self.multiplier = multiplier
+        self.addWidget(QLabel(label))
+        self.spinner = QSpinBox()
+        self.addWidget(self.spinner)
+    def value(self):
+        return self.spinner.value() * self.multiplier
+        
+class RationMultiplierDialog(QDialog):
+    def __init__(self, parent=None):
+        QDialog.__init__(self, parent)
+        self.canceled = True
+        self.value = None
+
+        self.layout = QVBoxLayout(self)
+
+        self.adult_males = MultSpinner("Adult males:", 1.0)
+        self.layout.addLayout(self.adult_males)
+        self.adult_females = MultSpinner("Adult females:", 0.75)
+        self.layout.addLayout(self.adult_females)
+        self.child_1_3 = MultSpinner("Children ages 1-3", 0.3)
+        self.layout.addLayout(self.child_1_3)
+        self.child_4_6 = MultSpinner("Children ages 4-6", 0.5)
+        self.layout.addLayout(self.child_4_6)
+        self.child_7_9 = MultSpinner("Children ages 7-9", 0.75)
+        self.layout.addLayout(self.child_7_9)
+
+        self.btn_hbox = QHBoxLayout()
+        self.ok_btn = QPushButton("&OK")
+        self.ok_btn.clicked.connect(self.commit)
+        self.cancel_btn = QPushButton("&Cancel")
+        self.cancel_btn.clicked.connect(self.close)
+        self.btn_hbox.addWidget(self.ok_btn)
+        self.btn_hbox.addWidget(self.cancel_btn)
+        self.layout.addLayout(self.btn_hbox)
+
+
+    def commit(self, *args):
+        self.canceled = False
+        self.value = sum([self.adult_males.value(),
+                          self.adult_females.value(),
+                          self.child_1_3.value(),
+                          self.child_4_6.value(),
+                          self.child_7_9.value()])
+        self.close()
+
 class InventoryItemDialog(QDialog):
     def __init__(self, parent, item=None):
         QDialog.__init__(self, parent)
@@ -244,11 +292,18 @@ class Quartermaster(QMainWindow):
             self.loadFile(fn)
 
     def getRationNumber(self):
-        return 3.5
+        dlg = RationMultiplierDialog(self)
+        dlg.exec()
+        return dlg.value
 
     def setGoals(self):
         multiplier = self.getRationNumber()
-        self.db.set_goals(multiplier)
+        if multiplier:
+            self.db.set_goals(multiplier)
+        else:
+            mb = QMessageBox()
+            mb.setText("Goals not set.")
+            mb.exec_()
 
     def set_model(self):
         self.inventory_model = InventoryListModel(self.inventory_table,
