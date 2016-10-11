@@ -93,6 +93,15 @@ class InventoryItem(object):
             self.purchase_date = parse(purchase_date)
         else:
             self.purchase_date = purchase_date
+
+    def clone(self, as_type):
+        return InventoryItem(None,
+                             self.condition,
+                             self.description,
+                             Measurement(0, self.amount.unit),
+                             self.life,
+                             datetime.today())
+    
     @property
     def expiration_date(self):
         if not self.purchase_date:

@@ -80,6 +80,9 @@ class MultSpinner(QHBoxLayout):
 class RationMultiplierDialog(QDialog):
     def __init__(self, parent=None):
         QDialog.__init__(self, parent)
+
+        self.setWindowTitle("Family Size")
+        
         self.canceled = True
         self.value = None
 
@@ -243,8 +246,6 @@ class InventoryItemDialog(QDialog):
         self.btn_hbox.addWidget(self.cancel_btn)
         self.layout.addLayout(self.btn_hbox)
         
-        self.setLayout(self.layout)
-        
         
 class Quartermaster(QMainWindow):
     def __init__(self):
@@ -281,16 +282,18 @@ class Quartermaster(QMainWindow):
                         for key in self.db.amounts.keys()]
         self.durations = [str(key)
                           for key in self.db.durations.keys()]
-        print(self.durations)
         
         self.record_types = [str(key)
                              for key in self.db.record_types.keys()]
         self.showItems()
 
-    def showItems(self, *args):
+    def showItems(self):
         self.items = self.db.all_inventory(self.view_combo.currentText().lower())
         self.set_model()
 
+    def view_combo_changed(self, *args):
+        self.showItems()
+        
     def browseOpenFile(self, *args, **kwargs):
         fn, _ = QFileDialog.getOpenFileName(self, 'Open file', "", "*.qm")
         if fn:
