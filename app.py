@@ -256,12 +256,14 @@ class Quartermaster(QMainWindow):
         self.setMinimumWidth(400)
         self.addControls()
         self.showMaximized()
-        self.lastRow = None
 
-    def showClone(self, *args):
+    def selectedRow(self):
         sm = self.inventory_table.selectionModel()
         selected = sm.selection()
-        row = selected.indexes()[0].row()
+        return selected.indexes()[0].row()
+
+    def showClone(self, *args):
+        row = self.selectedRow()
 
         item = self.inventory_model.items[row].clone("inventory")
 
@@ -272,12 +274,10 @@ class Quartermaster(QMainWindow):
             self.items.append(frm.item)
             self.set_model()
         
-    def showEdit(self, selected, deselected):
-        row = selected.indexes()[0].row()
-        if row != self.lastRow:
-            self.lastRow = row
-            frm = InventoryItemDialog(self, self.inventory_model.items[row])
-            frm.exec()
+    def showEdit(self, *args):
+        row = self.selectedRow()
+        frm = InventoryItemDialog(self, self.inventory_model.items[row])
+        frm.exec()
 
     def showAdd(self, *args, **kwargs):
         frm = InventoryItemDialog(self, None)
@@ -338,7 +338,6 @@ class Quartermaster(QMainWindow):
                                                   self.items)
         self.inventory_table.setModel(self.inventory_model)
         sm = self.inventory_table.selectionModel()
-        sm.selectionChanged.connect(self.showEdit)
         self.inventory_table.setColumnHidden(0, True)
         self.inventory_table.resizeColumnsToContents()
 
