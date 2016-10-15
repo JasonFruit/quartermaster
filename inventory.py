@@ -98,7 +98,7 @@ class InventoryItem(object):
         return InventoryItem(None,
                              self.condition,
                              self.description,
-                             Measurement(0, self.amount.unit),
+                             self.amount,
                              self.life,
                              datetime.today())
     

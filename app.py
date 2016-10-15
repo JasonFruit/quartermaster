@@ -182,6 +182,7 @@ class InventoryItemDialog(QDialog):
             self.parent().db.save_inventory(self.item)
         else:
             self.parent().db.add_inventory(self.item)
+            
         self.close()
         
     def _initControls(self):
@@ -257,6 +258,20 @@ class Quartermaster(QMainWindow):
         self.showMaximized()
         self.lastRow = None
 
+    def showClone(self, *args):
+        sm = self.inventory_table.selectionModel()
+        selected = sm.selection()
+        row = selected.indexes()[0].row()
+
+        item = self.inventory_model.items[row].clone("inventory")
+
+        frm = InventoryItemDialog(self, item)
+        frm.exec()
+
+        if frm.item.id:
+            self.items.append(frm.item)
+            self.set_model()
+        
     def showEdit(self, selected, deselected):
         row = selected.indexes()[0].row()
         if row != self.lastRow:
@@ -385,8 +400,17 @@ class Quartermaster(QMainWindow):
 
         self.add_btn = QPushButton("&Add")
         self.add_btn.clicked.connect(self.showAdd)
+
+        self.edit_btn = QPushButton("&Edit")
+        self.edit_btn.clicked.connect(self.showEdit)
+
+        self.clone_btn = QPushButton("&Clone")
+        self.clone_btn.clicked.connect(self.showClone)
+        
         self.delete_btn = QPushButton("&Delete")
         self.btn_hbx.addWidget(self.add_btn)
+        self.btn_hbx.addWidget(self.edit_btn)
+        self.btn_hbx.addWidget(self.clone_btn)
         self.btn_hbx.addWidget(self.delete_btn)
 
         self.layout.addLayout(self.btn_hbx)
