@@ -18,6 +18,7 @@ class InventoryListModel(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent, *args)
         self.item_attribs = ['id', 'condition', 'description', 'amount',
                              'life', 'purchase_date', 'expiration_date']
+        self.base_items = items
         self.items = items
     def rowCount(self, parent):
         return len(self.items)
@@ -47,7 +48,29 @@ class InventoryListModel(QAbstractTableModel):
                 pass
         
         return val
-    
+
+    def set_filter(self, filter):
+
+        def item_contains(item, words):
+            retval = True
+
+            for word in words:
+                if ((not word in item.condition.lower()) and
+                    (not word in item.description.lower())):
+                    retval = False
+
+            return retval
+        
+        if filter.strip() == "":
+            self.items = self.base_items
+        else:
+            words = filter.lower().split(" ")
+            
+            self.items = [item
+                          for item in self.base_items
+                          if item_contains(item, words)]
+        self.reset()
+            
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.item_attribs[col].replace("_", " ").title()
@@ -132,6 +155,7 @@ class InventoryItemDialog(QDialog):
         self.durations = self.parent().durations
 
         self.addControls()
+        
         if self.item:
             self._syncControlsToItem()
         else:
@@ -328,6 +352,7 @@ class Quartermaster(QMainWindow):
         multiplier = self.getRationNumber()
         if multiplier:
             self.db.set_goals(multiplier)
+            self.set_model()
         else:
             mb = QMessageBox()
             mb.setText("Goals not set.")
@@ -340,6 +365,11 @@ class Quartermaster(QMainWindow):
         sm = self.inventory_table.selectionModel()
         self.inventory_table.setColumnHidden(0, True)
         self.inventory_table.resizeColumnsToContents()
+
+    def filterItems(self):
+        filter_text = self.filter_entry.text()
+        if self.inventory_model:
+            self.inventory_model.set_filter(filter_text)
 
     def setUpMenu(self):
         menu_bar = self.menuBar()
@@ -384,11 +414,24 @@ class Quartermaster(QMainWindow):
 
         self.layout = QVBoxLayout(self.main_widget)
 
+        self.control_hbx = QHBoxLayout(self.main_widget)
+        
         self.view_combo = QComboBox()
+        self.view_combo.setMinimumWidth(200)
         self.view_combo.addItems(["Inventory", "Goal"])
         self.view_combo.currentIndexChanged.connect(self.showItems)
-        
-        self.layout.addWidget(self.view_combo)
+        self.control_hbx.addWidget(self.view_combo)
+
+        self.filter_entry = QLineEdit()
+        self.filter_entry.setPlaceholderText("Filter text. . . ")
+        self.filter_entry.textChanged.connect(self.filterItems)
+        self.control_hbx.addWidget(self.filter_entry)
+
+        self.clear_btn = QPushButton("C&lear")
+        self.clear_btn.clicked.connect(lambda *args: self.filter_entry.setText(""))
+        self.control_hbx.addWidget(self.clear_btn)
+
+        self.layout.addLayout(self.control_hbx)
 
         self.inventory_table = QTableView()
         self.inventory_table.setSortingEnabled(True)
