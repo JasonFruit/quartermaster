@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import datetime, timedelta
 import math
@@ -8,6 +9,10 @@ from PySide.QtGui import *
 from inventory import Measurement, InventoryDB, InventoryItem
 
 qt_app = QApplication(sys.argv)
+qt_app.setOrganizationName("Jason R. Fruit")
+qt_app.setApplicationName("Quartermaster")
+
+QSettings.setDefaultFormat(QSettings.IniFormat)
 
 time_deltas = {"year": timedelta(365),
                "month": timedelta(30),
@@ -276,6 +281,7 @@ class Quartermaster(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.filename = ""
+        self.settings = QSettings()
         self.setWindowTitle("Quartermaster")
         self.setMinimumWidth(400)
         self.addControls()
@@ -334,8 +340,9 @@ class Quartermaster(QMainWindow):
         self.showItems()
         
     def browseOpenFile(self, *args, **kwargs):
-        fn, _ = QFileDialog.getOpenFileName(self, 'Open file', "", "*.qm")
+        fn, _ = QFileDialog.getOpenFileName(self, 'Open file', self.settings.value("save directory"), "*.qm")
         if fn:
+            self.settings.setValue("save directory", os.path.dirname(fn))
             self.loadFile(fn)
 
     def browseCreateFile(self, *args, **kwargs):
@@ -359,6 +366,7 @@ class Quartermaster(QMainWindow):
             mb.exec_()
 
     def set_model(self):
+        self.filter_entry.setText("")
         self.inventory_model = InventoryListModel(self.inventory_table,
                                                   self.items)
         self.inventory_table.setModel(self.inventory_model)
@@ -450,6 +458,7 @@ class Quartermaster(QMainWindow):
         self.clone_btn.clicked.connect(self.showClone)
         
         self.delete_btn = QPushButton("&Delete")
+        
         self.btn_hbx.addWidget(self.add_btn)
         self.btn_hbx.addWidget(self.edit_btn)
         self.btn_hbx.addWidget(self.clone_btn)
@@ -462,4 +471,5 @@ class Quartermaster(QMainWindow):
         qt_app.exec_()
 
 app = Quartermaster()
+
 app.run()
