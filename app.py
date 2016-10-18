@@ -463,6 +463,10 @@ class Quartermaster(QMainWindow):
                                             "*.qm")
         # if a filename was chosen
         if fn:
+            # save the last file opened and its directory
+            self.settings.setValue("last file", fn)
+            self.settings.setValue("save directory", os.path.dirname(fn))
+            
             self.loadFile(fn)
 
     def getRationNumber(self):
