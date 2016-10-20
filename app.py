@@ -584,6 +584,8 @@ class Quartermaster(QMainWindow):
         self.inventory_table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.inventory_table.setSortingEnabled(True)
 
+        self.inventory_table.doubleClicked.connect(self.showEdit)
+
         self.layout.addWidget(self.inventory_table)
 
         # buttons for various actions

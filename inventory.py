@@ -67,7 +67,6 @@ weight = ?,
 weight_unit_id = ?,
 life = ?,
 life_unit_id = ?,
-record_type_id = ?,
 purchase_date = ?,
 expiration_date = ?
 where id = ?"""
@@ -221,7 +220,6 @@ class InventoryDB(object):
         # get the IDs for units from cached data
         amount, amount_id = item.amount.number, self.amounts[item.amount.unit]
         life, life_id = item.life.number, self.durations[item.life.unit]
-        rec_type_id = self.record_types["inventory"]
         condition_id = self.conditions[item.condition]
         
         self.cur.execute(save_inventory_sql,
@@ -231,7 +229,6 @@ class InventoryDB(object):
                           amount_id,
                           life,
                           life_id,
-                          rec_type_id,
                           item.purchase_date,
                           item.expiration_date,
                           item.id))
