@@ -234,13 +234,13 @@ class InventoryDB(object):
                           item.id))
         self.conn.commit()
 
-    def add_inventory(self, item):
+    def add_inventory(self, item, record_type="inventory"):
         """Save a new inventory item to the database"""
 
         # get the IDs for units from cached data
         amount, amount_id = item.amount.number, self.amounts[item.amount.unit]
         life, life_id = item.life.number, self.durations[item.life.unit]
-        rec_type_id = self.record_types["inventory"]
+        rec_type_id = self.record_types[record_type]
         condition_id = self.conditions[item.condition]
         
         self.cur.execute(add_inventory_sql,

@@ -52,14 +52,14 @@ class InventoryListModel(QAbstractTableModel):
         
         try:
             val = val.to_string() # if it has a to_string() method,
-                                  # convert it to a string
+            # convert it to a string
         except:
             try:
                 # if it's a date, format it nicely
                 val = val.strftime("%B %d, %Y")
             except:
                 pass # it's already good
-        
+            
         return val
 
     def set_filter(self, filter):
@@ -90,7 +90,7 @@ class InventoryListModel(QAbstractTableModel):
                           if item_contains(item, words)]
             
         self.emit(SIGNAL("layoutChanged()")) # tell the control to refresh
-            
+        
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             # make the attribute into nice column header text
@@ -176,6 +176,140 @@ class RationMultiplierDialog(QDialog):
         self.close()
 
 class InventoryItemDialog(QDialog):
+    """A dialog to add and edit inventory items"""
+    def __init__(self, parent, goals, amounts, item=None):
+        QDialog.__init__(self, parent)
+
+        if item:
+            self.setWindowTitle("Edit Inventory Item")
+        else:
+            self.setWindowTitle("Add Inventory Item")
+
+        self.item = item
+
+        self.setMinimumWidth(400)
+
+        self.goals = goals
+        self.amounts = amounts
+
+        self.addControls()
+        
+        if self.item:
+            self._syncControlsToItem()
+        else:
+            self._initControls()
+
+        self.canceled = True
+
+    def format_goal(self, goal):
+        if goal.condition == "":
+            return goal.description
+        else:
+            return "%s (%s)" % (goal.description, goal.condition)
+
+    def addControls(self):
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+        
+        self.goal_hbox = QHBoxLayout()
+        self.goal_label = QLabel("Goal to fill:")
+        self.goal_combo = QComboBox()
+
+            
+        self.goal_combo.addItems([self.format_goal(goal)
+                                  for goal in self.goals])
+
+        self.goal_hbox.addWidget(self.goal_label)
+        self.goal_hbox.addWidget(self.goal_combo)
+
+        self.layout.addLayout(self.goal_hbox)
+        
+        # amount (number and unit)
+        self.amount_hbox = QHBoxLayout(self)
+        self.amount_hbox.addWidget(QLabel("Amount:"))
+        self.amount_text = QLineEdit()
+        self.amount_hbox.addWidget(self.amount_text)
+        self.amount_combo = QComboBox(self)
+        self.amount_combo.addItems(self.parent().amounts)
+        self.amount_hbox.addWidget(self.amount_combo)
+        self.layout.addLayout(self.amount_hbox)
+
+        # date purchased
+        self.purch_hbox = QHBoxLayout(self)
+        self.purch_hbox.addWidget(QLabel("Purchased:"))
+        self.purch_datepicker = QDateTimeEdit()
+        self.purch_datepicker.setCalendarPopup(True)
+        self.purch_datepicker.setDisplayFormat("MMMM d, yyyy")
+        self.purch_hbox.addWidget(self.purch_datepicker)
+        self.layout.addLayout(self.purch_hbox, False)
+
+        # buttons to confirm or cancel
+        self.button_hbox = QHBoxLayout(self)
+        self.ok_btn = QPushButton("&OK")
+        self.ok_btn.clicked.connect(self._ok)
+        self.cancel_btn = QPushButton("&Cancel")
+        self.cancel_btn.clicked.connect(self._cancel)
+        self.button_hbox.addWidget(self.ok_btn)
+        self.button_hbox.addWidget(self.cancel_btn)
+        self.layout.addLayout(self.button_hbox)
+
+    def _syncControlsToItem(self, *args):
+        for i in range(self.goal_combo.count()):
+            if self.format_goal(self.item) == self.goal_combo.itemText(i):
+                self.goal_combo.setCurrentIndex(i)
+
+        self.amount_text.setText(str(self.item.amount.number))
+        self.amount_combo.setCurrentIndex(self.amounts.index(self.item.amount.unit))
+        if self.item.purchase_date:
+            self.purch_datepicker.setDate(QDate(
+                self.item.purchase_date.year,
+                self.item.purchase_date.month,
+                self.item.purchase_date.day))
+        else:
+            today = datetime.today()
+            self.purch_datepicker.setDate(QDate(today.year,
+                                                today.month,
+                                                today.day))
+
+    def _initControls(self):
+        self.amount_text.setText("0")
+        self.amount_combo.setCurrentIndex(self.amounts.index("pound"))
+        today = datetime.today()
+        self.purch_datepicker.setDate(QDate(today.year,
+                                            today.month,
+                                            today.day))
+
+    def _syncItemToControls(self, *args):
+        goal = self.goals[self.goal_combo.currentIndex()]
+        
+        if not self.item:
+            self.item = goal.clone()
+        else:
+            self.item.condition = goal.condition
+            self.item.description = goal.description
+
+        self.item.amount = Measurement(
+            int(self.amount_text.text()),
+            self.amount_combo.itemText(self.amount_combo.currentIndex()))
+
+        self.item.life = goal.life
+
+        qd = self.purch_datepicker.date()
+        
+        self.item.purchase_date = datetime(qd.year(),
+                                           qd.month(),
+                                           qd.day())
+
+    def _ok(self, *args):
+        self.canceled = False
+        self._syncItemToControls()
+        self.close()
+        
+    def _cancel(self, *args):
+        self.close()
+        
+class GoalDialog(QDialog):
     """A dialog to add or edit inventory items"""
     def __init__(self, parent, conditions, amounts, durations, item=None):
         QDialog.__init__(self, parent)
@@ -259,12 +393,12 @@ class InventoryItemDialog(QDialog):
         self.cond_combo.setCurrentIndex(0)
         
         self.amount_text.setText("40") # a standard plastic bucket
-                                       # holds about 40 pounds of
-                                       # grain
+        # holds about 40 pounds of
+        # grain
         self.amount_combo.setCurrentIndex(0)
         
         self.life_text.setText("2") # 2 years is standard for canned
-                                    # goods
+        # goods
         self.life_combo.setCurrentIndex(0)
         
         self.purch_datepicker.setDate(QDate(datetime.now().year,
@@ -366,13 +500,17 @@ class Quartermaster(QMainWindow):
         sm = self.inventory_table.selectionModel()
         selected = sm.selection()
         return selected.indexes()[0].row() # our selection mode only
-                                           # allows single row
-                                           # selections, so this is
-                                           # safe
+    # allows single row
+    # selections, so this is
+    # safe
 
-    def inventoryItemDialog(self, item):
+    def goalDialog(self, item):
         """Build a new dialog to edit the specified inventory item"""
-        return InventoryItemDialog(self, self.conditions, self.amounts, self.durations, item)
+        return GoalDialog(self,
+                          self.conditions,
+                          self.amounts,
+                          self.durations,
+                          item)
     
     def showClone(self, *args):
         """Clone an item and show a dialog to edit the clone"""
@@ -382,31 +520,63 @@ class Quartermaster(QMainWindow):
         # clone the selected item as a new inventory item
         item = self.inventory_model.items[row].clone("inventory")
 
-        frm = self.inventoryItemDialog(item)
-        frm.setWindowTitle("Edit cloned item")
+        frm = InventoryItemDialog(self,
+                                  self.allGoals(),
+                                  self.amounts,
+                                  item)
         frm.exec()
 
-        # if item was saved to the database, it will have an ID, so
-        # show it
-        if frm.item.id:
+        if not frm.canceled:
             self.items.append(frm.item)
             self.set_model()
-        
+            self.db.add_inventory(frm.item)
+
+    def allGoals(self):
+        goals = self.db.all_inventory("goal")
+        goals.sort(key=lambda g: "%s (%s)" % (g.description, g.condition))
+        return goals
+    
     def showEdit(self, *args):
         """Show a dialog to edit the selected item"""
-        row = self.selectedRow()
-        frm = self.inventoryItemDialog(self.inventory_model.items[row])
-        frm.setWindowTitle("Edit inventory item")
-        frm.exec()
+
+        view = self.view_combo.itemText(self.view_combo.currentIndex())
+        item = self.inventory_model.items[self.selectedRow()]
+        
+        if view.lower() == "goal":
+            gd = goalDialog(item)
+            gd.exec()
+            self.db.save_inventory(item)
+            
+        else:
+            frm = InventoryItemDialog(self,
+                                      self.allGoals(),
+                                      self.amounts,
+                                      item)
+            frm.exec()
+
+            if not frm.canceled:
+                self.db.save_inventory(frm.item)
 
     def showAdd(self, *args, **kwargs):
         """Show a dialog to add a new inventory item"""
-        frm = self.inventoryItemDialog(None)
-        frm.setWindowTitle("Add new inventory item")
-        frm.exec()
-        if frm.item:
-            self.items.append(frm.item)
-            self.set_model()
+
+        view = self.view_combo.itemText(self.view_combo.currentIndex())
+
+        if view.lower() == "goal":
+            frm = self.goalDialog(None)
+            frm.setWindowTitle("Add new goal")
+            frm.exec()
+            if frm.item:
+                self.db.add_inventory(frm.item, "goal")
+        else:
+            frm = InventoryItemDialog(self, self.allGoals(), self.amounts)
+
+            frm.exec()
+
+            if not frm.canceled:
+                self.items.append(frm.item)
+                self.set_model()
+                self.db.add_inventory(frm.item)
 
     def loadFile(self, filename):
         """Load the specified inventory file"""
@@ -484,7 +654,7 @@ class Quartermaster(QMainWindow):
             self.db.set_goals(multiplier)
             self.set_model()
         else: # if the dialog was canceled, let the user know no goals
-              # were set
+            # were set
             mb = QMessageBox()
             mb.setText("Goals not set.")
             mb.exec_()
