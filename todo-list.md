@@ -1,12 +1,6 @@
 Quartermaster To-do List
 ======================================================================
 
-Make it impossible to add items for which no goal exists.
-----------------------------------------------------------------------
-
- - re-purpose existing inventory item form for goals
- - new and simpler form for fulfilling goals
-
 Reporting system
 ----------------------------------------------------------------------
 

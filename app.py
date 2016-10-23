@@ -340,21 +340,10 @@ class GoalDialog(QDialog):
         self.amount_combo.setCurrentIndex(self.amounts.index(self.item.amount.unit))
         self.life_text.setText(str(self.item.life.number))
         self.life_combo.setCurrentIndex(self.durations.index(self.item.life.unit))
-        if self.item.purchase_date:
-            self.purch_datepicker.setDate(QDate(self.item.purchase_date.year,
-                                                self.item.purchase_date.month,
-                                                self.item.purchase_date.day))
 
     def _syncItemToControls(self):
         """Update or create the item to match the user input"""
 
-        # the date control uses a special Qt datatype; convert to a
-        # Python datetime with no time
-        date = self.purch_datepicker.date()
-        purchase_date = datetime(date.year(),
-                                 date.month(),
-                                 date.day())
-        
         # if there's an item, update it
         if self.item: 
             self.item.condition = self.cond_combo.currentText()
@@ -363,7 +352,7 @@ class GoalDialog(QDialog):
                                            self.amounts[self.amount_combo.currentIndex()])
             self.item.life = Measurement(int(self.life_text.text()),
                                          self.durations[self.life_combo.currentIndex()])
-            self.item.purchase_date = purchase_date
+            self.item.purchase_date = None
         else: # otherwise, create a new one
             self.item = InventoryItem(
                 None, # no ID until it's saved
@@ -373,7 +362,7 @@ class GoalDialog(QDialog):
                             self.amounts[self.amount_combo.currentIndex()]),
                 Measurement(int(self.life_text.text()),
                             self.durations[self.life_combo.currentIndex()]),
-                purchase_date)
+                None)
 
     def commit(self, *args, **kwargs):
         """Run when OK is clicked"""
@@ -393,18 +382,15 @@ class GoalDialog(QDialog):
         self.cond_combo.setCurrentIndex(0)
         
         self.amount_text.setText("40") # a standard plastic bucket
-        # holds about 40 pounds of
-        # grain
-        self.amount_combo.setCurrentIndex(0)
+                                       # holds about 40 pounds of
+                                       # grain
+        self.amount_combo.setCurrentIndex(self.amounts.index("pound"))
         
         self.life_text.setText("2") # 2 years is standard for canned
-        # goods
-        self.life_combo.setCurrentIndex(0)
+                                    # goods
+    
+        self.life_combo.setCurrentIndex(self.durations.index("year"))
         
-        self.purch_datepicker.setDate(QDate(datetime.now().year,
-                                            datetime.now().month,
-                                            datetime.now().day))
-
     def addControls(self):
         """Set up the controls for the form"""
         
@@ -445,15 +431,6 @@ class GoalDialog(QDialog):
         self.life_combo.addItems(self.parent().durations)
         self.life_hbox.addWidget(self.life_combo)
         self.layout.addLayout(self.life_hbox)
-
-        # date purchased
-        self.purch_hbox = QHBoxLayout(self)
-        self.purch_hbox.addWidget(QLabel("Purchased:"))
-        self.purch_datepicker = QDateTimeEdit()
-        self.purch_datepicker.setCalendarPopup(True)
-        self.purch_datepicker.setDisplayFormat("MMMM d, yyyy")
-        self.purch_hbox.addWidget(self.purch_datepicker)
-        self.layout.addLayout(self.purch_hbox, False)
 
         # buttons for OK and Cancel
         self.btn_hbox = QHBoxLayout(self)
@@ -543,7 +520,7 @@ class Quartermaster(QMainWindow):
         item = self.inventory_model.items[self.selectedRow()]
         
         if view.lower() == "goal":
-            gd = goalDialog(item)
+            gd = self.goalDialog(item)
             gd.exec()
             self.db.save_inventory(item)
             
@@ -600,6 +577,9 @@ class Quartermaster(QMainWindow):
 
     def showItems(self):
         """Show the items on the form"""
+
+        self.clone_btn.setEnabled(self.view_combo.currentText().lower() == "goal")
+        
         self.items = self.db.all_inventory(self.view_combo.currentText().lower())
         self.set_model()
 
@@ -767,7 +747,7 @@ class Quartermaster(QMainWindow):
         self.edit_btn = QPushButton("&Edit")
         self.edit_btn.clicked.connect(self.showEdit)
 
-        self.clone_btn = QPushButton("&Clone")
+        self.clone_btn = QPushButton("Fulfill &goal")
         self.clone_btn.clicked.connect(self.showClone)
         
         self.delete_btn = QPushButton("&Delete")
