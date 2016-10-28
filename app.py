@@ -508,6 +508,27 @@ class Quartermaster(QMainWindow):
             self.set_model()
             self.db.add_inventory(frm.item)
 
+    def deleteItem(self, *args):
+        row = self.selectedRow()
+        item = self.inventory_model.items[row]
+        
+        conf_dlg = QMessageBox()
+        conf_dlg.setWindowTitle("Confirm item deletion")
+        conf_dlg.setText("Really delete %s?" % item.to_string())
+        
+        conf_dlg.setIcon(QMessageBox.Question)
+        conf_dlg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        
+        conf_dlg.setDefaultButton(QMessageBox.Save)
+
+        ret = conf_dlg.exec_()
+        
+        if ret == QMessageBox.Ok:
+            self.db.delete_item(item)
+            self.set_model()
+        elif ret == QMessageBox.Cancel:
+            pass
+
     def allGoals(self):
         goals = self.db.all_inventory("goal")
         goals.sort(key=lambda g: "%s (%s)" % (g.description, g.condition))
@@ -751,6 +772,7 @@ class Quartermaster(QMainWindow):
         self.clone_btn.clicked.connect(self.showClone)
         
         self.delete_btn = QPushButton("&Delete")
+        self.delete_btn.clicked.connect(self.deleteItem)
         
         self.btn_hbx.addWidget(self.add_btn)
         self.btn_hbx.addWidget(self.edit_btn)

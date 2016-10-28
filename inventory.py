@@ -71,6 +71,8 @@ purchase_date = ?,
 expiration_date = ?
 where id = ?"""
 
+delete_sql = "delete from item where id = ?"
+
 # SQL to return all inventory of a specific record type
 inventory_sql = """
 select i.id as id,
@@ -157,6 +159,10 @@ class InventoryItem(object):
 
         elif self.life.unit == "day":
             return self.purchase_date + timedelta(self.life.number)
+    def to_string(self):
+        return "%s (%s), %s" % (self.description,
+                                self.condition,
+                                self.amount.to_string())
 
         
 class InventoryDB(object):
@@ -290,6 +296,10 @@ class InventoryDB(object):
             output.append(InventoryItem(id, condition, description, amount, life, purchase_date))
         
         return output
+
+    def delete_item(self, item):
+        self.cur.execute(delete_sql, (item.id,))
+        self.conn.commit()
 
 # if __name__ == "__main__":
 #     import sys
