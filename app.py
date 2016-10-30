@@ -465,7 +465,8 @@ class Quartermaster(QMainWindow):
         last_file = self.settings.value("last file")
 
         # if there was a last file, re-open it
-        if last_file:
+        if last_file and os.path.exists(last_file) and not os.path.isdir(last_file):
+            print(last_file)
             self.loadFile(last_file)
 
         # TODO: restore saved window state
@@ -627,11 +628,17 @@ class Quartermaster(QMainWindow):
 
     def browseCreateFile(self, *args, **kwargs):
         """Show a file dialog to create a new .qm file"""
+
+        fd = QFileDialog(self, "New file")
+        fd.setNameFilter("Inventory files (*.qm)")
+        fd.setDefaultSuffix("qm")
+        fd.exec()
+        fn = fd.selectedFiles()[0]
+        # fn, _ = QFileDialog.getSaveFileName(self,
+        #                                     'New file',
+        #                                     self.settings.value("save directory"),
+        #                                     "*.qm")
         
-        fn, _ = QFileDialog.getSaveFileName(self,
-                                            'New file',
-                                            self.settings.value("save directory"),
-                                            "*.qm")
         # if a filename was chosen
         if fn:
             # save the last file opened and its directory
