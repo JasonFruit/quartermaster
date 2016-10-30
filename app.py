@@ -599,14 +599,12 @@ class Quartermaster(QMainWindow):
 
     def showItems(self):
         """Show the items on the form"""
-
-        self.clone_btn.setEnabled(self.view_combo.currentText().lower() == "goal")
-        
         self.items = self.db.all_inventory(self.view_combo.currentText().lower())
         self.set_model()
 
     def view_combo_changed(self, *args):
         """Runs when the user changes the current view"""
+        self.clone_btn.setEnabled(self.view_combo.currentText().lower() == "goal")
         self.showItems()
         
     def browseOpenFile(self, *args, **kwargs):
@@ -630,14 +628,10 @@ class Quartermaster(QMainWindow):
         """Show a file dialog to create a new .qm file"""
 
         fd = QFileDialog(self, "New file")
-        fd.setNameFilter("Inventory files (*.qm)")
-        fd.setDefaultSuffix("qm")
+        fd.setNameFilter("Inventory files (*.qm)") # show only .qm files
+        fd.setDefaultSuffix("qm") # force new files to have .qm extension
         fd.exec()
         fn = fd.selectedFiles()[0]
-        # fn, _ = QFileDialog.getSaveFileName(self,
-        #                                     'New file',
-        #                                     self.settings.value("save directory"),
-        #                                     "*.qm")
         
         # if a filename was chosen
         if fn:
@@ -740,7 +734,7 @@ class Quartermaster(QMainWindow):
         self.view_combo = QComboBox()
         self.view_combo.setMinimumWidth(200)
         self.view_combo.addItems(["Inventory", "Goal"])
-        self.view_combo.currentIndexChanged.connect(self.showItems)
+        self.view_combo.currentIndexChanged.connect(self.view_combo_changed)
         self.control_hbx.addWidget(self.view_combo)
 
         # a way to enter filters
