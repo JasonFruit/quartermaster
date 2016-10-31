@@ -4,28 +4,46 @@ import codecs
 import math
 from datetime import datetime, timedelta
 from dateutil.parser import parse
+from glob import glob
 
 class Report(object):
-    def __init__(self, filename):
+    def __init__(self, filename=None):
 
-        with codecs.open(filename, "r", "utf-8") as f:
-            lines = f.readlines()
+        if filename:
+            with codecs.open(filename, "r", "utf-8") as f:
+                lines = f.readlines()
 
-        i = 0
-        header_lines = []
-        
-        while lines[i].startswith("--"):
-            header_lines.append(lines[i].strip(" -"))
-            i += 1
+            i = 0
+            header_lines = []
 
-        self.title = header_lines[0].strip()
+            while lines[i].startswith("--"):
+                header_lines.append(lines[i].strip(" -"))
+                i += 1
 
-        self.description = "\n".join(header_lines[1:]).strip(" \n")
+            self.title = header_lines[0].strip()
 
-        self.sql = "\n".join(map(lambda s: s.strip(" \n"),
-                                 lines[i:]))
+            self.description = "\n".join(header_lines[1:]).strip(" \n")
+
+            self.sql = "\n".join(map(lambda s: s.strip(" \n"),
+                                     lines[i:]))
+
+        else:
+            self.title = ""
+            self.description = ""
+            self.sql = ""
+
+    def to_dict(self):
+        return {"title": self.title,
+                "description": self.description,
+                "sql": self.sql}
+
+    def from_dict(dic):
+        rpt = Report()
+        rpt.title = dic["title"]
+        rpt.description = dic["description"]
+        rpt.sql = dic["sql"]
+        return rpt
             
-
 class Measurement(object):
     """Represents a numeric measurement with a unit"""
     def __init__(self, number, unit):
@@ -194,6 +212,8 @@ class InventoryDB(object):
     """Manages storage of inventory, goal, and recommendation records"""
     def __init__(self, path):
 
+        self.filename = path
+        
         # read the SQL to create a database
         with open("sql/create-db.sql", "r") as f:
             self.create_sql = f.read()
@@ -321,6 +341,20 @@ class InventoryDB(object):
             output.append(InventoryItem(id, condition, description, amount, life, purchase_date))
         
         return output
+
+    def execute_no_commit(self, sql):
+        """Execute SQL against the current database on a connection that is
+        never committed (to avoid malicious or accidental updating or
+        deletion; return the column headers and the data"""
+        
+        conn = connect(self.filename)
+        cur = conn.cursor()
+        cur.execute(sql)
+        columns = [dsc[0]
+                   for dsc in cur.description]
+        output = cur.fetchall()
+        conn.close()
+        return columns, output
 
     def delete_item(self, item):
         self.cur.execute(delete_sql, (item.id,))

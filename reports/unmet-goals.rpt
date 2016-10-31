@@ -1,12 +1,12 @@
--- Unmet Goals
+-- Shopping list
 --
 -- Shows a list of all inventory goals not met.
 --
-select i.item + '(' + c.description + ')' as description,
-cast(weight as text) + ' ' + wu.unit as goal_weight,
-ifnull(total_weight, 0) as inventory_weight,
-first_expiration_date,
-100 * ifnull(total_weight, 0) / weight as pct_met
+select i.item || ' (' || c.description || ')' as [Item description],
+weight || ' ' || wu.unit as [Goal weight],
+ifnull(total_weight, 0) || ' ' || wu.unit as [Inventory weight],
+first_expiration_date as [First expiration date],
+100 * ifnull(total_weight, 0) / weight as [Percent met]
 from item i
 left outer join condition c
 on i.condition_id = c.id
@@ -32,4 +32,5 @@ i.item = inv.item
 where (total_weight < weight or
        total_weight is null) and
 rt.description = 'goal'
-order by pct_met desc;
+order by [Percent met],
+weight desc;

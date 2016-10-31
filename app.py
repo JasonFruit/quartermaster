@@ -2,12 +2,14 @@ import os
 import sys
 from datetime import datetime, timedelta
 import math
+import json
 
 # TODO: pare this down to what we actually need
 from PySide.QtCore import *
 from PySide.QtGui import *
+from PySide.QtWebKit import QWebView
 
-from inventory import Measurement, InventoryDB, InventoryItem
+from inventory import Measurement, InventoryDB, InventoryItem, Report
 
 # set up the QT application properties
 qt_app = QApplication(sys.argv)
@@ -16,7 +18,6 @@ qt_app.setApplicationName("Quartermaster")
 
 # use a human-readable settings filetype
 QSettings.setDefaultFormat(QSettings.IniFormat)
-
 
 class InventoryListModel(QAbstractTableModel):
     """A model to feed a table widget of inventory items"""
@@ -446,6 +447,51 @@ class GoalDialog(QDialog):
         self.btn_hbox.addWidget(self.cancel_btn)
         self.layout.addLayout(self.btn_hbox)
         
+
+class TableDialog(QDialog):
+    """A dialog to display a table of data"""
+    def __init__(self, parent, title, columns, data):
+        QDialog.__init__(self, parent)
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+        
+        self.setMinimumWidth(400)
+        self.setWindowTitle(title)
+
+        self.webView = QWebView()
+
+        self.layout.addWidget(self.webView)
+
+        self.webView.setHtml(self.html(title, columns, data))
+
+        self.showMaximized()
+
+    def html(self, title, columns, data):
+        tmpl = """<html>
+<head><title>%(title)s</title></head>
+<body>
+<h1>%(title)s</h1>
+<table>
+<tr>%(header)s</tr>
+%(rows)s
+</table>
+</body>
+</html>"""
+        
+        header = "".join(["<th>%s</th>" % col
+                          for col in columns])
+
+        rows = "\n".join(["<tr>" + "".join(["<td>%s</td>" % datum
+                                           for datum in row])  + "</tr>"
+                          for row in data])
+
+        html =  tmpl % {"title": title,
+                        "header": header,
+                        "rows": rows}
+        print(html)
+        return html
+
         
 class Quartermaster(QMainWindow):
     """The main window of the application"""
@@ -469,7 +515,7 @@ class Quartermaster(QMainWindow):
         last_file = self.settings.value("last file")
 
         # if there was a last file, re-open it
-        if last_file and os.path.exists(last_file) and not os.path.isdir(last_file):
+        if os.path.isfile(last_file):
             print(last_file)
             self.loadFile(last_file)
 
@@ -694,6 +740,7 @@ class Quartermaster(QMainWindow):
         
         self.file_menu = menu_bar.addMenu("&File")
         self.inventory_menu = menu_bar.addMenu("&Inventory")
+        self.report_menu = menu_bar.addMenu("&Reports")
         self.help_menu = menu_bar.addMenu("&Help")
         
         createAction = QAction(QIcon('create.png'), '&New', self)
@@ -710,6 +757,8 @@ class Quartermaster(QMainWindow):
 
         self.file_menu.addAction(openAction)
 
+        self.file_menu.addSeparator()
+        
         exitAction = QAction(QIcon('exit.png'), '&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Exit application')
@@ -722,6 +771,67 @@ class Quartermaster(QMainWindow):
         setGoalAction.triggered.connect(self.setGoals)
 
         self.inventory_menu.addAction(setGoalAction)
+
+        rptAction = QAction(QIcon('import.png'), "&Import", self)
+        rptAction.setStatusTip("Import a report specification")
+        rptAction.triggered.connect(self.importReport)
+
+        self.report_menu.addAction(rptAction)
+        self.report_menu.addSeparator()
+        
+        self.loadReports()
+
+    def loadReports(self):
+        reports_str = self.settings.value("reports")
+        
+        if reports_str:
+            dic = json.loads(reports_str)
+        else:
+            dic = []
+
+        # add each report to the Reports menu
+        for rpt in dic:
+            self.addReportAction(rpt)
+
+    def addReportAction(self, rpt_dic):
+        def rpt_action(rpt):
+            """Returns a report-showing function for the specified report"""
+            return lambda *args: self.showReport(Report.from_dict(rpt))
+
+        action = QAction(QIcon('report.png'), rpt_dic["title"], self)
+        action.setStatusTip(rpt_dic["description"][:100])
+        action.triggered.connect(rpt_action(rpt_dic))
+        self.report_menu.addAction(action)
+        
+
+    def showReport(self, report):
+        
+        cols, data = self.db.execute_no_commit(report.sql)
+        td = TableDialog(self, report.title, cols, data)
+        td.exec()
+
+    def importReport(self, *args):
+        fd = QFileDialog(self, "Import report file")
+        fd.setNameFilter("Report specifications (*.rpt)")
+        fd.setDefaultSuffix("rpt") # force new files to have .qm extension
+        fd.exec()
+        fn = fd.selectedFiles()[0]
+        
+        # if a filename was chosen
+        if fn and os.path.isfile(fn):
+            rpt = Report(fn)
+            
+            reports_str = self.settings.value("reports")
+            
+            if reports_str:
+                dic = json.loads(reports_str)
+            else:
+                dic = []
+                
+            dic.append(rpt.to_dict())
+            self.settings.setValue("reports", json.dumps(dic))
+
+            self.addReportAction(rpt.to_dict())
         
     def addControls(self):
         self.main_widget = QWidget()
