@@ -448,7 +448,7 @@ class GoalDialog(QDialog):
         self.layout.addLayout(self.btn_hbox)
         
 
-class TableDialog(QDialog):
+class ReportDialog(QDialog):
     """A dialog to display a table of data"""
     def __init__(self, parent, title, columns, data):
         QDialog.__init__(self, parent)
@@ -463,9 +463,30 @@ class TableDialog(QDialog):
 
         self.layout.addWidget(self.webView)
 
+        self.button_hbx = QHBoxLayout()
+
+        self.close_btn = QPushButton("&Close")
+        self.close_btn.clicked.connect(self.close)
+        self.button_hbx.addWidget(self.close_btn)
+
+        self.print_btn = QPushButton("&Print")
+        self.print_btn.clicked.connect(self.print)
+        self.button_hbx.addWidget(self.print_btn)
+
+        self.layout.addLayout(self.button_hbx)
+
         self.webView.setHtml(self.html(title, columns, data))
 
+    def print(self, *args):
+        p = QPrinter()
+        dialog = QPrintDialog(p)
+        if dialog.exec_() == QDialog.Accepted:
+            self.webView.print(p)
+
+    def exec_(self):
+        
         self.showMaximized()
+        QDialog.exec_(self)
 
     def html(self, title, columns, data):
         tmpl = """<html>
@@ -516,7 +537,6 @@ class Quartermaster(QMainWindow):
 
         # if there was a last file, re-open it
         if os.path.isfile(last_file):
-            print(last_file)
             self.loadFile(last_file)
 
         # TODO: restore saved window state
@@ -528,10 +548,10 @@ class Quartermaster(QMainWindow):
         sm = self.inventory_table.selectionModel()
         selected = sm.selection()
         return selected.indexes()[0].row() # our selection mode only
-    # allows single row
-    # selections, so this is
-    # safe
-
+                                           # allows single row
+                                           # selections, so this is
+                                           # safe
+    
     def goalDialog(self, item):
         """Build a new dialog to edit the specified inventory item"""
         return GoalDialog(self,
@@ -690,6 +710,9 @@ class Quartermaster(QMainWindow):
             self.settings.setValue("save directory", os.path.dirname(fn))
             
             self.loadFile(fn)
+            self.setGoals()
+            self.view_combo.setCurrentIndex(1)
+            
 
     def getRationNumber(self):
         """Show a dialog to determine base ration multiplier and return it"""
@@ -766,8 +789,8 @@ class Quartermaster(QMainWindow):
 
         self.file_menu.addAction(exitAction)
 
-        setGoalAction = QAction(QIcon('set-goals.png'), 'Set &goals', self)
-        setGoalAction.setStatusTip('Set inventory goals')
+        setGoalAction = QAction(QIcon('set-goals.png'), 'Reset &goals', self)
+        setGoalAction.setStatusTip('Reset inventory goals')
         setGoalAction.triggered.connect(self.setGoals)
 
         self.inventory_menu.addAction(setGoalAction)
@@ -807,7 +830,7 @@ class Quartermaster(QMainWindow):
     def showReport(self, report):
         
         cols, data = self.db.execute_no_commit(report.sql)
-        td = TableDialog(self, report.title, cols, data)
+        td = ReportDialog(self, report.title, cols, data)
         td.exec_()
 
     def importReport(self, *args):
