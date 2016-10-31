@@ -5,6 +5,27 @@ import math
 from datetime import datetime, timedelta
 from dateutil.parser import parse
 
+class Report(object):
+    def __init__(self, filename):
+
+        with codecs.open(filename, "r", "utf-8") as f:
+            lines = f.readlines()
+
+        i = 0
+        header_lines = []
+        
+        while lines[i].startswith("--"):
+            header_lines.append(lines[i].strip(" -"))
+            i += 1
+
+        self.title = header_lines[0].strip()
+
+        self.description = "\n".join(header_lines[1:]).strip(" \n")
+
+        self.sql = "\n".join(map(lambda s: s.strip(" \n"),
+                                 lines[i:]))
+            
+
 class Measurement(object):
     """Represents a numeric measurement with a unit"""
     def __init__(self, number, unit):
@@ -17,7 +38,11 @@ class Measurement(object):
         if self.number == 1:
             return "%s %s" % (self.number, self.unit)
         else:
-            return "%s %ss" % (self.number, self.unit)
+            if self.unit == "each":
+                return "%s %s" % (self.number, self.unit)
+            else:
+                return "%s %ss" % (self.number, self.unit)
+
     def __lt__(self, other):
         if self.unit == other.unit:
             return self.number < other.number
@@ -300,8 +325,3 @@ class InventoryDB(object):
     def delete_item(self, item):
         self.cur.execute(delete_sql, (item.id,))
         self.conn.commit()
-
-# if __name__ == "__main__":
-#     import sys
-#     db = InventoryDB(sys.argv[1])
-#     db.set_goals(3.5)

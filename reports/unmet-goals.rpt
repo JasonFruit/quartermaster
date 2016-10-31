@@ -1,0 +1,35 @@
+-- Unmet Goals
+--
+-- Shows a list of all inventory goals not met.
+--
+select i.item + '(' + c.description + ')' as description,
+cast(weight as text) + ' ' + wu.unit as goal_weight,
+ifnull(total_weight, 0) as inventory_weight,
+first_expiration_date,
+100 * ifnull(total_weight, 0) / weight as pct_met
+from item i
+left outer join condition c
+on i.condition_id = c.id
+inner join unit wu
+on i.weight_unit_id = wu.id
+inner join unit lu
+on i.life_unit_id = lu.id
+inner join recordtype rt
+on i.record_type_id = rt.id
+left outer join (
+    select condition_id,
+    item,
+    sum(weight) as total_weight,
+    min(expiration_date) as first_expiration_date
+    from item i
+    inner join recordtype rt
+    on i.record_type_id = rt.id
+    where rt.description = 'inventory'
+    group by condition_id,
+    item) inv
+on i.condition_id = inv.condition_id and
+i.item = inv.item
+where (total_weight < weight or
+       total_weight is null) and
+rt.description = 'goal'
+order by pct_met desc;

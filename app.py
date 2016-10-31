@@ -140,6 +140,10 @@ class RationMultiplierDialog(QDialog):
 
         self.layout = QVBoxLayout(self)
 
+        # the multiplier is the ratio of food consumption to that of
+        # an adult male
+        
+        # TODO: put this in the database
         self.adult_males = MultSpinner("Adult males:", 1.0)
         self.layout.addLayout(self.adult_males)
         self.adult_females = MultSpinner("Adult females:", 0.75)
