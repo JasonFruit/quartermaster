@@ -489,7 +489,7 @@ class TableDialog(QDialog):
         html =  tmpl % {"title": title,
                         "header": header,
                         "rows": rows}
-        print(html)
+
         return html
 
         
@@ -576,7 +576,7 @@ class Quartermaster(QMainWindow):
         
         if ret == QMessageBox.Ok:
             self.db.delete_item(item)
-            self.set_model()
+            self.showItems()
         elif ret == QMessageBox.Cancel:
             pass
 
@@ -808,7 +808,7 @@ class Quartermaster(QMainWindow):
         
         cols, data = self.db.execute_no_commit(report.sql)
         td = TableDialog(self, report.title, cols, data)
-        td.exec()
+        td.exec_()
 
     def importReport(self, *args):
         fd = QFileDialog(self, "Import report file")
