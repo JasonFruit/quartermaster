@@ -8,6 +8,7 @@ import json
 from PySide.QtCore import *
 from PySide.QtGui import *
 from PySide.QtWebKit import QWebView
+from PrintDialog import PrintDialog
 
 from inventory import Measurement, InventoryDB, InventoryItem, Report
 
@@ -471,13 +472,12 @@ class ReportDialog(QDialog):
         self.webView.setHtml(self.html(title, columns, data))
 
     def print(self, *args):
-        p = QPrinter()
-        dialog = QPrintDialog(p)
+        dialog = PrintDialog()
         if dialog.exec_() == QDialog.Accepted:
-            self.webView.print(p)
+            print("printing report")
+            self.webView.print(dialog.printer)
 
     def exec_(self):
-        
         self.showMaximized()
         QDialog.exec_(self)
 
