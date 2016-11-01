@@ -373,14 +373,7 @@ class GoalDialog(QDialog):
         """Run when OK is clicked"""
         
         self._syncItemToControls()
-
-        # if there's an ID, save over it
-        if self.item.id:
-            self.parent().db.save_inventory(self.item)
-        else: # otherwise add a new item
-            self.parent().db.add_inventory(self.item)
-            
-        self.close()
+        self.accept()
         
     def _initControls(self):
         """Initialize the controls to sensible initial values"""
@@ -491,16 +484,16 @@ class ReportDialog(QDialog):
     def html(self, title, columns, data):
         tmpl = """<html>
 <head><title>%(title)s</title></head>
-<body>
-<h1>%(title)s</h1>
-<table>
-<tr>%(header)s</tr>
+<body style="font-family: sans;">
+<h1 style="border-bottom-style: solid; border-width: 2px; border-color: blue;">%(title)s</h1>
+<table style="width: 100%%; border-collapse: collapse;">
+<tr style="border-bottom-style: solid; border-width: 1px; border-color: light-grey;">%(header)s</tr>
 %(rows)s
 </table>
 </body>
 </html>"""
         
-        header = "".join(["<th>%s</th>" % col
+        header = "".join(["<th align='left'>%s</th>" % col
                           for col in columns])
 
         rows = "\n".join(["<tr>" + "".join(["<td>%s</td>" % datum
@@ -613,8 +606,8 @@ class Quartermaster(QMainWindow):
         
         if view.lower() == "goal":
             gd = self.goalDialog(item)
-            gd.exec()
-            self.db.save_inventory(item)
+            if gd.exec_() == QDialog.Accepted:
+                self.db.save_inventory(item)
             
         else:
             frm = InventoryItemDialog(self,
