@@ -4,6 +4,8 @@ class PrintDialog(QDialog):
     def __init__(self, parent=None):
         QDialog.__init__(self, parent)
 
+        self.setWindowTitle("Print document to...")
+
         self.printers = QPrinterInfo().availablePrinters()
 
         self.orientations = [s
@@ -89,3 +91,8 @@ class PrintDialog(QDialog):
 
     def commit(self, *args):
         self.accept()
+
+if __name__ == "__main__":
+    app = QApplication([])
+    pd = PrintDialog()
+    pd.exec_()
