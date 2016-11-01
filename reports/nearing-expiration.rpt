@@ -1,0 +1,20 @@
+-- Nearing expiration date
+
+-- Shows a list of items nearing their expiration dates, starting with
+-- the soonest expired.
+
+select  i.item || ' (' || c.description || ')' as [Item description],
+purchase_date as [Purchase date],
+expiration_date as [Expiration date],
+weight || ' ' || wu.unit as [Weight]
+from item i
+left outer join condition c
+on i.condition_id = c.id
+inner join unit wu
+on i.weight_unit_id = wu.id
+inner join unit lu
+on i.life_unit_id = lu.id
+inner join recordtype rt
+on i.record_type_id = rt.id
+where rt.description = 'inventory' and
+date(expiration_date, '-6 month') < date('now');
