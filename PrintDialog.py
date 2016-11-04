@@ -52,6 +52,7 @@ class PrintDialog(QDialog):
     def setDefaults(self):
         p = self.printer
 
+        print(self.pageSizes.index(p.pageSize().name.decode("utf-8")))
         self.page_size_combo.setCurrentIndex(
             self.pageSizes.index(p.pageSize().name.decode("utf-8")))
 
@@ -71,28 +72,39 @@ class PrintDialog(QDialog):
                  for s in self.currentPrinterInfo.supportedPaperSizes()
                  if s.name.decode("utf-8") not in ["NPageSize", "NPaperSize"]])
             self.page_size_combo.addItems(self.pageSizes)
+            self.setDefaults()
         except AttributeError:
             pass
 
     def pageSizeChanged(self, new_index):
-        new_size = self.pageSizes[new_index]
+        pass
+
+    def orientationChanged(self, new_index):
+        pass
+
+    def commit(self, *args):
+        page_size_index = self.page_size_combo.currentIndex()
+        new_size = self.pageSizes[page_size_index]
         for size in self.currentPrinterInfo.supportedPaperSizes():
             if size.name.decode("utf-8") == new_size:
                 self.printer.setPageSize(size)
 
-    def orientationChanged(self, new_index):
-        sel = self.orientation_combo.itemText(new_index)
+        orientation_index = self.orientation_combo.currentIndex()
+        sel = self.orientation_combo.itemText(orientation_index)
         if sel == "Portrait":
             self.printer.setOrientation(QPrinter.Orientation.Portrait)
         elif sel == "Landscape":
             self.printer.setOrientation(QPrinter.Orientation.Landscape)
         else:
             raise NotImplementedError("Orientation %s not implemented." % sel)
-
-    def commit(self, *args):
+        
         self.accept()
 
 if __name__ == "__main__":
     app = QApplication([])
     pd = PrintDialog()
-    pd.exec_()
+    if pd.exec_() == QDialog.Accepted:
+        p = pd.printer
+        print(p.printerName(),
+              p.pageSize(),
+              p.orientation())
