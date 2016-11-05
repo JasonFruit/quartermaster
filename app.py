@@ -15,7 +15,7 @@ from inventory import Measurement, InventoryDB, InventoryItem, Report
 # set up the QT application properties
 qt_app = QApplication(sys.argv)
 qt_app.setOrganizationName("Jason R. Fruit")
-qt_app.setApplicationName("Quartermaster")
+qt_app.setApplicationName("Deep Larder")
 
 # use a human-readable settings filetype
 QSettings.setDefaultFormat(QSettings.IniFormat)
@@ -507,7 +507,7 @@ class ReportDialog(QDialog):
         return html
 
         
-class Quartermaster(QMainWindow):
+class DeepLarder(QMainWindow):
     """The main window of the application"""
     def __init__(self):
         QMainWindow.__init__(self)
@@ -518,7 +518,7 @@ class Quartermaster(QMainWindow):
         # .ini file for settings
         self.settings = QSettings()
         
-        self.setWindowTitle("Quartermaster")
+        self.setWindowTitle("Deep Larder")
 
         # any narrower than this won't really work
         self.setMinimumWidth(400)
@@ -529,7 +529,7 @@ class Quartermaster(QMainWindow):
         last_file = self.settings.value("last file")
 
         # if there was a last file, re-open it
-        if os.path.isfile(last_file):
+        if last_file and os.path.isfile(last_file):
             self.loadFile(last_file)
 
         # TODO: restore saved window state
@@ -645,7 +645,7 @@ class Quartermaster(QMainWindow):
         
         self.filename = filename
         
-        self.setWindowTitle("Quartermaster (%s)" % os.path.basename(self.filename))
+        self.setWindowTitle("Deep Larder (%s)" % os.path.basename(self.filename))
         self.db = InventoryDB(self.filename)
 
         # cache some immutable information from the database
@@ -953,6 +953,6 @@ class Quartermaster(QMainWindow):
         self.show()
         qt_app.exec_()
 
-app = Quartermaster()
+app = DeepLarder()
 
 app.run()
