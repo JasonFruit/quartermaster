@@ -664,7 +664,8 @@ class Quartermaster(QMainWindow):
         """Show the items on the form"""
         self.items = self.db.all_inventory(self.view_combo.currentText().lower())
         self.set_model()
-
+        self.selectionChanged()
+        
     def view_combo_changed(self, *args):
         """Runs when the user changes the current view"""
         self.clone_btn.setEnabled(self.view_combo.currentText().lower() == "goal")
@@ -751,6 +752,36 @@ class Quartermaster(QMainWindow):
         if self.inventory_model:
             self.inventory_model.set_filter(filter_text)
 
+    def setUpToolbar(self):
+
+        toolbar = QToolBar(self)
+        
+        self.theAddAction = QAction(QIcon('list-add.png'), '&Add (Ctrl+I)', self)
+        self.theAddAction.setShortcut('Ctrl+I')
+        self.theAddAction.triggered.connect(self.showAdd)
+
+        toolbar.addAction(self.theAddAction)
+        
+        self.deleteAction = QAction(QIcon('list-remove.png'), '&Delete (Ctrl+D)', self)
+        self.deleteAction.setShortcut('Ctrl+d')
+        self.deleteAction.triggered.connect(self.deleteItem)
+
+        toolbar.addAction(self.deleteAction)
+
+        self.editAction = QAction(QIcon('edit.png'), '&Edit (Ctrl+E)', self)
+        self.editAction.setShortcut('Ctrl+e')
+        self.editAction.triggered.connect(self.showEdit)
+
+        toolbar.addAction(self.editAction)
+
+        self.fulfillAction = QAction(QIcon("edit-copy.png"), "&Fulfill goal (Ctrl+G)", self)
+        self.fulfillAction.setShortcut("Ctrl+g")
+        self.fulfillAction.triggered.connect(self.showClone)
+
+        toolbar.addAction(self.fulfillAction)
+
+        self.addToolBar(toolbar)
+
     def setUpMenu(self):
         menu_bar = self.menuBar()
         
@@ -759,40 +790,40 @@ class Quartermaster(QMainWindow):
         self.report_menu = menu_bar.addMenu("&Reports")
         self.help_menu = menu_bar.addMenu("&Help")
         
-        createAction = QAction(QIcon('create.png'), '&New', self)
-        createAction.setShortcut('Ctrl+N')
-        createAction.setStatusTip('New inventory file')
-        createAction.triggered.connect(self.browseCreateFile)
+        self.createAction = QAction(QIcon('create.png'), '&New', self)
+        self.createAction.setShortcut('Ctrl+N')
+        self.createAction.setStatusTip('New inventory file')
+        self.createAction.triggered.connect(self.browseCreateFile)
 
-        self.file_menu.addAction(createAction)
+        self.file_menu.addAction(self.createAction)
         
-        openAction = QAction(QIcon('open.png'), '&Open', self)
-        openAction.setShortcut('Ctrl+O')
-        openAction.setStatusTip('Open an inventory file')
-        openAction.triggered.connect(self.browseOpenFile)
+        self.openAction = QAction(QIcon('open.png'), '&Open', self)
+        self.openAction.setShortcut('Ctrl+O')
+        self.openAction.setStatusTip('Open an inventory file')
+        self.openAction.triggered.connect(self.browseOpenFile)
 
-        self.file_menu.addAction(openAction)
+        self.file_menu.addAction(self.openAction)
 
         self.file_menu.addSeparator()
         
-        exitAction = QAction(QIcon('exit.png'), '&Exit', self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.setStatusTip('Exit application')
-        exitAction.triggered.connect(self.close)
+        self.exitAction = QAction(QIcon('exit.png'), '&Exit', self)
+        self.exitAction.setShortcut('Ctrl+Q')
+        self.exitAction.setStatusTip('Exit application')
+        self.exitAction.triggered.connect(self.close)
 
-        self.file_menu.addAction(exitAction)
+        self.file_menu.addAction(self.exitAction)
 
-        setGoalAction = QAction(QIcon('set-goals.png'), 'Reset &goals', self)
-        setGoalAction.setStatusTip('Reset inventory goals')
-        setGoalAction.triggered.connect(self.setGoals)
+        self.setGoalAction = QAction(QIcon('set-goals.png'), 'Reset &goals', self)
+        self.setGoalAction.setStatusTip('Reset inventory goals')
+        self.setGoalAction.triggered.connect(self.setGoals)
 
-        self.inventory_menu.addAction(setGoalAction)
+        self.inventory_menu.addAction(self.setGoalAction)
 
-        rptAction = QAction(QIcon('import.png'), "&Import", self)
-        rptAction.setStatusTip("Import a report specification")
-        rptAction.triggered.connect(self.importReport)
+        self.reportAction = QAction(QIcon('import.png'), "&Import", self)
+        self.reportAction.setStatusTip("Import a report specification")
+        self.reportAction.triggered.connect(self.importReport)
 
-        self.report_menu.addAction(rptAction)
+        self.report_menu.addAction(self.reportAction)
         self.report_menu.addSeparator()
         
         self.loadReports()
@@ -848,11 +879,25 @@ class Quartermaster(QMainWindow):
             self.settings.setValue("reports", json.dumps(dic))
 
             self.addReportAction(rpt.to_dict())
+
+    def selectionChanged(self, *args):
+        sm = self.inventory_table.selectionModel()
+        try:
+            sel = sm.selection()
+            enable = len(sel) > 0
+        except:
+            enable = False
+            
+        self.theAddAction.setEnabled(enable)
+        self.editAction.setEnabled(enable)
+        self.deleteAction.setEnabled(enable)
+        self.fulfillAction.setEnabled(enable)
         
     def addControls(self):
         self.main_widget = QWidget()
 
         self.setUpMenu()
+        self.setUpToolbar()
         
         self.setCentralWidget(self.main_widget)
 
@@ -886,6 +931,7 @@ class Quartermaster(QMainWindow):
         self.inventory_table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.inventory_table.setSortingEnabled(True)
 
+        self.inventory_table.clicked.connect(self.selectionChanged)
         self.inventory_table.doubleClicked.connect(self.showEdit)
 
         self.layout.addWidget(self.inventory_table)
@@ -911,6 +957,8 @@ class Quartermaster(QMainWindow):
         self.btn_hbx.addWidget(self.delete_btn)
 
         self.layout.addLayout(self.btn_hbx)
+
+        self.selectionChanged([])
 
     def run(self):
         self.show()
