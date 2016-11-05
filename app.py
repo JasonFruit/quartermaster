@@ -668,7 +668,6 @@ class Quartermaster(QMainWindow):
         
     def view_combo_changed(self, *args):
         """Runs when the user changes the current view"""
-        self.clone_btn.setEnabled(self.view_combo.currentText().lower() == "goal")
         self.showItems()
         
     def browseOpenFile(self, *args, **kwargs):
@@ -755,29 +754,11 @@ class Quartermaster(QMainWindow):
     def setUpToolbar(self):
 
         toolbar = QToolBar(self)
-        
-        self.theAddAction = QAction(QIcon('list-add.png'), '&Add (Ctrl+I)', self)
-        self.theAddAction.setShortcut('Ctrl+I')
-        self.theAddAction.triggered.connect(self.showAdd)
 
+        # these actions are defined in self.setUpMenu()
         toolbar.addAction(self.theAddAction)
-        
-        self.deleteAction = QAction(QIcon('list-remove.png'), '&Delete (Ctrl+D)', self)
-        self.deleteAction.setShortcut('Ctrl+d')
-        self.deleteAction.triggered.connect(self.deleteItem)
-
         toolbar.addAction(self.deleteAction)
-
-        self.editAction = QAction(QIcon('edit.png'), '&Edit (Ctrl+E)', self)
-        self.editAction.setShortcut('Ctrl+e')
-        self.editAction.triggered.connect(self.showEdit)
-
         toolbar.addAction(self.editAction)
-
-        self.fulfillAction = QAction(QIcon("edit-copy.png"), "&Fulfill goal (Ctrl+G)", self)
-        self.fulfillAction.setShortcut("Ctrl+g")
-        self.fulfillAction.triggered.connect(self.showClone)
-
         toolbar.addAction(self.fulfillAction)
 
         self.addToolBar(toolbar)
@@ -819,6 +800,35 @@ class Quartermaster(QMainWindow):
 
         self.inventory_menu.addAction(self.setGoalAction)
 
+        self.inventory_menu.addSeparator()
+
+        
+        self.theAddAction = QAction(QIcon('add-can.png'), '&Add (Ctrl+I)', self)
+        self.theAddAction.setShortcut('Ctrl+I')
+        self.theAddAction.triggered.connect(self.showAdd)
+
+        self.inventory_menu.addAction(self.theAddAction)
+        
+        self.deleteAction = QAction(QIcon('delete-can.png'), '&Delete (Ctrl+D)', self)
+        self.deleteAction.setShortcut('Ctrl+d')
+        self.deleteAction.triggered.connect(self.deleteItem)
+
+        self.inventory_menu.addAction(self.deleteAction)
+
+        self.editAction = QAction(QIcon('pencil.png'), '&Edit (Ctrl+E)', self)
+        self.editAction.setShortcut('Ctrl+e')
+        self.editAction.triggered.connect(self.showEdit)
+
+        self.inventory_menu.addAction(self.editAction)
+
+        self.fulfillAction = QAction(QIcon("fork.png"), "&Fulfill goal (Ctrl+G)", self)
+        self.fulfillAction.setShortcut("Ctrl+g")
+        self.fulfillAction.triggered.connect(self.showClone)
+
+        self.inventory_menu.addAction(self.fulfillAction)
+        
+
+        
         self.reportAction = QAction(QIcon('import.png'), "&Import", self)
         self.reportAction.setStatusTip("Import a report specification")
         self.reportAction.triggered.connect(self.importReport)
@@ -888,10 +898,11 @@ class Quartermaster(QMainWindow):
         except:
             enable = False
             
-        self.theAddAction.setEnabled(enable)
         self.editAction.setEnabled(enable)
         self.deleteAction.setEnabled(enable)
-        self.fulfillAction.setEnabled(enable)
+
+        view = self.view_combo.itemText(self.view_combo.currentIndex())
+        self.fulfillAction.setEnabled(enable and (view.lower() == "goal"))
         
     def addControls(self):
         self.main_widget = QWidget()
@@ -935,28 +946,6 @@ class Quartermaster(QMainWindow):
         self.inventory_table.doubleClicked.connect(self.showEdit)
 
         self.layout.addWidget(self.inventory_table)
-
-        # buttons for various actions
-        self.btn_hbx = QHBoxLayout(self)
-
-        self.add_btn = QPushButton("&Add")
-        self.add_btn.clicked.connect(self.showAdd)
-
-        self.edit_btn = QPushButton("&Edit")
-        self.edit_btn.clicked.connect(self.showEdit)
-
-        self.clone_btn = QPushButton("Fulfill &goal")
-        self.clone_btn.clicked.connect(self.showClone)
-        
-        self.delete_btn = QPushButton("&Delete")
-        self.delete_btn.clicked.connect(self.deleteItem)
-        
-        self.btn_hbx.addWidget(self.add_btn)
-        self.btn_hbx.addWidget(self.edit_btn)
-        self.btn_hbx.addWidget(self.clone_btn)
-        self.btn_hbx.addWidget(self.delete_btn)
-
-        self.layout.addLayout(self.btn_hbx)
 
         self.selectionChanged([])
 
