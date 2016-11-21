@@ -1,9 +1,10 @@
 from PySide.QtGui import *
 
-class ReportDialog(QDialog):
+class ReportManagerDialog(QDialog):
     def __init__(self, reports, parent=None):
         QDialog.__init__(self, parent)
         self.setWindowTitle("Manage Reports")
+        self.setMinimumWidth(600)
 
         self.canceled = True
         self.reports = reports
@@ -23,6 +24,7 @@ class ReportDialog(QDialog):
         self.delete_btn.clicked.connect(self.delete)
         
         self.rename_btn = QPushButton("&Rename")
+        self.rename_btn.clicked.connect(self.rename)
 
         self.btn_hbx.addWidget(self.delete_btn)
         self.btn_hbx.addWidget(self.rename_btn)
@@ -58,7 +60,16 @@ class ReportDialog(QDialog):
         for report in self.reports:
             if report.title == self.report_combo.itemText(self.report_combo.currentIndex()):
                 id = QInputDialog(self)
-                # id.setTextValue( TODO: finish this
+                id.setLabelText("New title:")
+                id.setTextValue(report.title)
+
+                id.exec_()
+
+                report.title = id.textValue()
+
+                self.report_combo.setItemText(self.report_combo.currentIndex(),
+                                              report.title)
+                break
 
     def commit(self, *args):
         self.canceled = False
@@ -66,12 +77,3 @@ class ReportDialog(QDialog):
 
     def cancel(self, *args):
         self.close()
-        
-
-if __name__ == "__main__":
-    app = QApplication("Hi.")
-    from inventory import Report
-    rd = ReportDialog([Report("reports/nearing-expiration.rpt"),
-                       Report("reports/unmet-goals.rpt")])
-    rd.exec()
-    print(rd.reports)

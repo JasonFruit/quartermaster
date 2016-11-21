@@ -11,6 +11,7 @@ from PySide.QtWebKit import QWebView
 from PrintDialog import PrintDialog
 
 from inventory import Measurement, InventoryDB, InventoryItem, Report
+from ReportManager import ReportManagerDialog
 
 # set up the QT application properties
 qt_app = QApplication(sys.argv)
@@ -826,8 +827,11 @@ class DeepLarder(QMainWindow):
         self.fulfillAction.triggered.connect(self.showClone)
 
         self.inventory_menu.addAction(self.fulfillAction)
-        
 
+        self.completeReportMenu()
+        
+    def completeReportMenu(self):
+        self.report_menu.clear()
         
         self.reportAction = QAction(QIcon('import.png'), "&Import", self)
         self.reportAction.setStatusTip("Import a report specification")
@@ -837,6 +841,15 @@ class DeepLarder(QMainWindow):
         self.report_menu.addSeparator()
         
         self.loadReports()
+
+        self.report_menu.addSeparator()
+
+        self.manageReportsAction = QAction(QIcon('reports.png'), '&Manage', self)
+        self.manageReportsAction.setStatusTip('Add, delete, and rename reports')
+        self.manageReportsAction.triggered.connect(self.manageReports)
+        
+        self.report_menu.addAction(self.manageReportsAction)
+        
 
     def loadReports(self):
         reports_str = self.settings.value("reports")
@@ -850,7 +863,18 @@ class DeepLarder(QMainWindow):
         for rpt in dic:
             self.addReportAction(rpt)
 
+    def manageReports(self, *args):
+        dic = json.loads(self.settings.value("reports"))
+        rpts = [Report.from_dict(d)
+                for d in dic]
+        rmd = ReportManagerDialog(rpts, self)
+        rmd.exec_()
+        rpts = json.dumps([rpt.to_dict() for rpt in rmd.reports])
+        self.settings.setValue("reports", rpts)
+        self.completeReportMenu()
+        
     def addReportAction(self, rpt_dic):
+        
         def rpt_action(rpt):
             """Returns a report-showing function for the specified report"""
             return lambda *args: self.showReport(Report.from_dict(rpt))
