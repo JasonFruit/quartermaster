@@ -833,13 +833,6 @@ class DeepLarder(QMainWindow):
     def completeReportMenu(self):
         self.report_menu.clear()
         
-        self.reportAction = QAction(QIcon('import.png'), "&Import", self)
-        self.reportAction.setStatusTip("Import a report specification")
-        self.reportAction.triggered.connect(self.importReport)
-
-        self.report_menu.addAction(self.reportAction)
-        self.report_menu.addSeparator()
-        
         self.loadReports()
 
         self.report_menu.addSeparator()
@@ -890,29 +883,6 @@ class DeepLarder(QMainWindow):
         cols, data = self.db.execute_no_commit(report.sql)
         td = ReportDialog(self, report.title, cols, data)
         td.exec_()
-
-    def importReport(self, *args):
-        fd = QFileDialog(self, "Import report file")
-        fd.setNameFilter("Report specifications (*.rpt)")
-        fd.setDefaultSuffix("rpt") # force new files to have .qm extension
-        fd.exec()
-        fn = fd.selectedFiles()[0]
-        
-        # if a filename was chosen
-        if fn and os.path.isfile(fn):
-            rpt = Report(fn)
-            
-            reports_str = self.settings.value("reports")
-            
-            if reports_str:
-                dic = json.loads(reports_str)
-            else:
-                dic = []
-                
-            dic.append(rpt.to_dict())
-            self.settings.setValue("reports", json.dumps(dic))
-
-            self.addReportAction(rpt.to_dict())
 
     def selectionChanged(self, *args):
         sm = self.inventory_table.selectionModel()

@@ -1,4 +1,6 @@
+import os
 from PySide.QtGui import *
+from inventory import Report
 
 class ReportManagerDialog(QDialog):
     def __init__(self, reports, parent=None):
@@ -20,12 +22,17 @@ class ReportManagerDialog(QDialog):
 
         self.btn_hbx = QHBoxLayout()
 
+        self.import_btn = QPushButton("&Import")
+        self.import_btn.clicked.connect(self.import_)
+
+        
         self.delete_btn = QPushButton("&Delete")
         self.delete_btn.clicked.connect(self.delete)
         
         self.rename_btn = QPushButton("&Rename")
         self.rename_btn.clicked.connect(self.rename)
-
+        
+        self.btn_hbx.addWidget(self.import_btn)
         self.btn_hbx.addWidget(self.delete_btn)
         self.btn_hbx.addWidget(self.rename_btn)
 
@@ -70,6 +77,30 @@ class ReportManagerDialog(QDialog):
                 self.report_combo.setItemText(self.report_combo.currentIndex(),
                                               report.title)
                 break
+
+    def import_(self, *args):
+        fd = QFileDialog(self, "Import report file")
+        fd.setNameFilter("Report specifications (*.rpt)")
+        fd.setDefaultSuffix("rpt") # force new files to have .qm extension
+        fd.exec()
+        fn = fd.selectedFiles()[0]
+        
+        # if a filename was chosen
+        if fn and os.path.isfile(fn):
+            rpt = Report(fn)
+            self.reports.append(rpt)
+            self.report_combo.addItem(rpt.title)
+            # reports_str = self.settings.value("reports")
+            
+            # if reports_str:
+            #     dic = json.loads(reports_str)
+            # else:
+            #     dic = []
+                
+            # dic.append(rpt.to_dict())
+            # self.settings.setValue("reports", json.dumps(dic))
+
+            # self.addReportAction(rpt.to_dict())
 
     def commit(self, *args):
         self.canceled = False
