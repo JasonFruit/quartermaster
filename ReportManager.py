@@ -90,17 +90,6 @@ class ReportManagerDialog(QDialog):
             rpt = Report(fn)
             self.reports.append(rpt)
             self.report_combo.addItem(rpt.title)
-            # reports_str = self.settings.value("reports")
-            
-            # if reports_str:
-            #     dic = json.loads(reports_str)
-            # else:
-            #     dic = []
-                
-            # dic.append(rpt.to_dict())
-            # self.settings.setValue("reports", json.dumps(dic))
-
-            # self.addReportAction(rpt.to_dict())
 
     def commit(self, *args):
         self.canceled = False
