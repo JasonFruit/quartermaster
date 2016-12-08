@@ -199,7 +199,7 @@ class InventoryItemDialog(QDialog):
         self.goals = goals
         self.amounts = amounts
 
-        self.addControls()
+        self._addControls()
         
         if self.item:
             self._syncControlsToItem()
@@ -214,7 +214,7 @@ class InventoryItemDialog(QDialog):
         else:
             return "%s (%s)" % (goal.description, goal.condition)
 
-    def addControls(self):
+    def _addControls(self):
 
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
@@ -331,7 +331,7 @@ class GoalDialog(QDialog):
         self.amounts = amounts
         self.durations = durations
 
-        self.addControls()
+        self._addControls()
 
         # if there's an item, sync the controls to it
         if self.item:
@@ -391,7 +391,7 @@ class GoalDialog(QDialog):
     
         self.life_combo.setCurrentIndex(self.durations.index("year"))
         
-    def addControls(self):
+    def _addControls(self):
         """Set up the controls for the form"""
         
         self.layout = QVBoxLayout(self)
@@ -524,19 +524,19 @@ class DeepLarder(QMainWindow):
         # any narrower than this won't really work
         self.setMinimumWidth(400)
 
-        self.addControls()
+        self._addControls()
 
         # read the last file opened from the settings file
         last_file = self.settings.value("last file")
 
         # if there was a last file, re-open it
         if last_file and os.path.isfile(last_file):
-            self.loadFile(last_file)
+            self._loadFile(last_file)
 
         # TODO: restore saved window state
         self.showMaximized()
 
-    def selectedRow(self):
+    def _selectedRow(self):
         """Return the index of the selected row"""
         
         sm = self.inventory_table.selectionModel()
@@ -546,7 +546,7 @@ class DeepLarder(QMainWindow):
                                            # selections, so this is
                                            # safe
     
-    def goalDialog(self, item):
+    def _goalDialog(self, item):
         """Build a new dialog to edit the specified inventory item"""
         return GoalDialog(self,
                           self.conditions,
@@ -554,10 +554,10 @@ class DeepLarder(QMainWindow):
                           self.durations,
                           item)
     
-    def showClone(self, *args):
+    def _showClone(self, *args):
         """Clone an item and show a dialog to edit the clone"""
         
-        row = self.selectedRow()
+        row = self._selectedRow()
         
         # clone the selected item as a new inventory item
         item = self.inventory_model.items[row].clone("inventory")
@@ -570,11 +570,11 @@ class DeepLarder(QMainWindow):
 
         if not frm.canceled:
             self.items.append(frm.item)
-            self.set_model()
+            self._setModel()
             self.db.add_inventory(frm.item)
 
-    def deleteItem(self, *args):
-        row = self.selectedRow()
+    def _deleteItem(self, *args):
+        row = self._selectedRow()
         item = self.inventory_model.items[row]
         
         conf_dlg = QMessageBox()
@@ -590,7 +590,7 @@ class DeepLarder(QMainWindow):
         
         if ret == QMessageBox.Ok:
             self.db.delete_item(item)
-            self.showItems()
+            self._showItems()
         elif ret == QMessageBox.Cancel:
             pass
 
@@ -599,14 +599,14 @@ class DeepLarder(QMainWindow):
         goals.sort(key=lambda g: "%s (%s)" % (g.description, g.condition))
         return goals
     
-    def showEdit(self, *args):
+    def _showEdit(self, *args):
         """Show a dialog to edit the selected item"""
 
         view = self.view_combo.itemText(self.view_combo.currentIndex())
-        item = self.inventory_model.items[self.selectedRow()]
+        item = self.inventory_model.items[self._selectedRow()]
         
         if view.lower() == "goal":
-            gd = self.goalDialog(item)
+            gd = self._goalDialog(item)
             if gd.exec_() == QDialog.Accepted:
                 self.db.save_inventory(item)
             
@@ -620,13 +620,13 @@ class DeepLarder(QMainWindow):
             if not frm.canceled:
                 self.db.save_inventory(frm.item)
 
-    def showAdd(self, *args, **kwargs):
+    def _showAdd(self, *args, **kwargs):
         """Show a dialog to add a new inventory item"""
 
         view = self.view_combo.itemText(self.view_combo.currentIndex())
 
         if view.lower() == "goal":
-            frm = self.goalDialog(None)
+            frm = self._goalDialog(None)
             frm.setWindowTitle("Add new goal")
             frm.exec()
             if frm.item:
@@ -638,10 +638,10 @@ class DeepLarder(QMainWindow):
 
             if not frm.canceled:
                 self.items.append(frm.item)
-                self.set_model()
+                self._setModel()
                 self.db.add_inventory(frm.item)
 
-    def loadFile(self, filename):
+    def _loadFile(self, filename):
         """Load the specified inventory file"""
         
         self.filename = filename
@@ -659,19 +659,19 @@ class DeepLarder(QMainWindow):
         self.record_types = [str(key)
                              for key in self.db.record_types.keys()]
         
-        self.showItems()
+        self._showItems()
 
-    def showItems(self):
+    def _showItems(self):
         """Show the items on the form"""
         self.items = self.db.all_inventory(self.view_combo.currentText().lower())
-        self.set_model()
-        self.selectionChanged()
+        self._setModel()
+        self._selectionChanged()
         
-    def view_combo_changed(self, *args):
+    def _viewComboChanged(self, *args):
         """Runs when the user changes the current view"""
-        self.showItems()
+        self._showItems()
         
-    def browseOpenFile(self, *args, **kwargs):
+    def _browseOpenFile(self, *args, **kwargs):
         """Show a file dialog to open a .qm file"""
 
         # open a file dialog at the last-used path
@@ -686,9 +686,9 @@ class DeepLarder(QMainWindow):
             self.settings.setValue("last file", fn)
             self.settings.setValue("save directory", os.path.dirname(fn))
             
-            self.loadFile(fn)
+            self._loadFile(fn)
 
-    def browseCreateFile(self, *args, **kwargs):
+    def _browseCreateFile(self, *args, **kwargs):
         """Show a file dialog to create a new .qm file"""
 
         fd = QFileDialog(self, "New file")
@@ -703,32 +703,32 @@ class DeepLarder(QMainWindow):
             self.settings.setValue("last file", fn)
             self.settings.setValue("save directory", os.path.dirname(fn))
             
-            self.loadFile(fn)
-            self.setGoals()
+            self._loadFile(fn)
+            self._setGoals()
             self.view_combo.setCurrentIndex(1)
             
 
-    def getRationNumber(self):
+    def _getRationNumber(self):
         """Show a dialog to determine base ration multiplier and return it"""
         dlg = RationMultiplierDialog(self)
         dlg.exec()
         return dlg.value
 
-    def setGoals(self):
+    def _setGoals(self):
         """Add database records for inventory goals"""
         
-        multiplier = self.getRationNumber()
+        multiplier = self._getRationNumber()
         
         if multiplier:
             self.db.set_goals(multiplier)
-            self.set_model()
+            self._setModel()
         else: # if the dialog was canceled, let the user know no goals
             # were set
             mb = QMessageBox()
             mb.setText("Goals not set.")
             mb.exec_()
 
-    def set_model(self):
+    def _setModel(self):
         """Having loaded a file, show the items in the tableview"""
         
         self.filter_entry.setText("")
@@ -744,7 +744,7 @@ class DeepLarder(QMainWindow):
         # make everything at least visible
         self.inventory_table.resizeColumnsToContents()
 
-    def filterItems(self):
+    def _filterItems(self):
         """Apply the filter to the table model"""
         
         filter_text = self.filter_entry.text()
@@ -752,11 +752,11 @@ class DeepLarder(QMainWindow):
         if self.inventory_model:
             self.inventory_model.set_filter(filter_text)
 
-    def setUpToolbar(self):
+    def _setUpToolbar(self):
 
         toolbar = QToolBar(self)
 
-        # these actions are defined in self.setUpMenu()
+        # these actions are defined in self._setUpMenu()
         toolbar.addAction(self.theAddAction)
         toolbar.addAction(self.deleteAction)
         toolbar.addAction(self.editAction)
@@ -764,7 +764,7 @@ class DeepLarder(QMainWindow):
 
         self.addToolBar(toolbar)
 
-    def setUpMenu(self):
+    def _setUpMenu(self):
         menu_bar = self.menuBar()
         
         self.file_menu = menu_bar.addMenu("&File")
@@ -775,14 +775,14 @@ class DeepLarder(QMainWindow):
         self.createAction = QAction(QIcon('create.png'), '&New', self)
         self.createAction.setShortcut('Ctrl+N')
         self.createAction.setStatusTip('New inventory file')
-        self.createAction.triggered.connect(self.browseCreateFile)
+        self.createAction.triggered.connect(self._browseCreateFile)
 
         self.file_menu.addAction(self.createAction)
         
         self.openAction = QAction(QIcon('open.png'), '&Open', self)
         self.openAction.setShortcut('Ctrl+O')
         self.openAction.setStatusTip('Open an inventory file')
-        self.openAction.triggered.connect(self.browseOpenFile)
+        self.openAction.triggered.connect(self._browseOpenFile)
 
         self.file_menu.addAction(self.openAction)
 
@@ -797,7 +797,7 @@ class DeepLarder(QMainWindow):
 
         self.setGoalAction = QAction(QIcon('set-goals.png'), 'Reset &goals', self)
         self.setGoalAction.setStatusTip('Reset inventory goals')
-        self.setGoalAction.triggered.connect(self.setGoals)
+        self.setGoalAction.triggered.connect(self._setGoals)
 
         self.inventory_menu.addAction(self.setGoalAction)
 
@@ -806,45 +806,45 @@ class DeepLarder(QMainWindow):
         
         self.theAddAction = QAction(QIcon('add-can.png'), '&Add (Ctrl+I)', self)
         self.theAddAction.setShortcut('Ctrl+I')
-        self.theAddAction.triggered.connect(self.showAdd)
+        self.theAddAction.triggered.connect(self._showAdd)
 
         self.inventory_menu.addAction(self.theAddAction)
         
         self.deleteAction = QAction(QIcon('delete-can.png'), '&Delete (Ctrl+D)', self)
         self.deleteAction.setShortcut('Ctrl+d')
-        self.deleteAction.triggered.connect(self.deleteItem)
+        self.deleteAction.triggered.connect(self._deleteItem)
 
         self.inventory_menu.addAction(self.deleteAction)
 
         self.editAction = QAction(QIcon('pencil.png'), '&Edit (Ctrl+E)', self)
         self.editAction.setShortcut('Ctrl+e')
-        self.editAction.triggered.connect(self.showEdit)
+        self.editAction.triggered.connect(self._showEdit)
 
         self.inventory_menu.addAction(self.editAction)
 
         self.fulfillAction = QAction(QIcon("fork.png"), "&Fulfill goal (Ctrl+G)", self)
         self.fulfillAction.setShortcut("Ctrl+g")
-        self.fulfillAction.triggered.connect(self.showClone)
+        self.fulfillAction.triggered.connect(self._showClone)
 
         self.inventory_menu.addAction(self.fulfillAction)
 
-        self.completeReportMenu()
+        self._completeReportMenu()
         
-    def completeReportMenu(self):
+    def _completeReportMenu(self):
         self.report_menu.clear()
         
-        self.loadReports()
+        self._loadReports()
 
         self.report_menu.addSeparator()
 
         self.manageReportsAction = QAction(QIcon('reports.png'), '&Manage', self)
         self.manageReportsAction.setStatusTip('Add, delete, and rename reports')
-        self.manageReportsAction.triggered.connect(self.manageReports)
+        self.manageReportsAction.triggered.connect(self._manageReports)
         
         self.report_menu.addAction(self.manageReportsAction)
         
 
-    def loadReports(self):
+    def _loadReports(self):
         reports_str = self.settings.value("reports")
         
         if reports_str:
@@ -854,9 +854,9 @@ class DeepLarder(QMainWindow):
 
         # add each report to the Reports menu
         for rpt in dic:
-            self.addReportAction(rpt)
+            self._addReportAction(rpt)
 
-    def manageReports(self, *args):
+    def _manageReports(self, *args):
         dic = json.loads(self.settings.value("reports"))
         rpts = [Report.from_dict(d)
                 for d in dic]
@@ -864,13 +864,13 @@ class DeepLarder(QMainWindow):
         rmd.exec_()
         rpts = json.dumps([rpt.to_dict() for rpt in rmd.reports])
         self.settings.setValue("reports", rpts)
-        self.completeReportMenu()
+        self._completeReportMenu()
         
-    def addReportAction(self, rpt_dic):
+    def _addReportAction(self, rpt_dic):
         
         def rpt_action(rpt):
             """Returns a report-showing function for the specified report"""
-            return lambda *args: self.showReport(Report.from_dict(rpt))
+            return lambda *args: self._showReport(Report.from_dict(rpt))
 
         action = QAction(QIcon('report.png'), rpt_dic["title"], self)
         action.setStatusTip(rpt_dic["description"][:100])
@@ -878,13 +878,13 @@ class DeepLarder(QMainWindow):
         self.report_menu.addAction(action)
         
 
-    def showReport(self, report):
+    def _showReport(self, report):
         
         cols, data = self.db.execute_no_commit(report.sql)
         td = ReportDialog(self, report.title, cols, data)
         td.exec_()
 
-    def selectionChanged(self, *args):
+    def _selectionChanged(self, *args):
         sm = self.inventory_table.selectionModel()
         try:
             sel = sm.selection()
@@ -898,11 +898,11 @@ class DeepLarder(QMainWindow):
         view = self.view_combo.itemText(self.view_combo.currentIndex())
         self.fulfillAction.setEnabled(enable and (view.lower() == "goal"))
         
-    def addControls(self):
+    def _addControls(self):
         self.main_widget = QWidget()
 
-        self.setUpMenu()
-        self.setUpToolbar()
+        self._setUpMenu()
+        self._setUpToolbar()
         
         self.setCentralWidget(self.main_widget)
 
@@ -914,13 +914,13 @@ class DeepLarder(QMainWindow):
         self.view_combo = QComboBox()
         self.view_combo.setMinimumWidth(200)
         self.view_combo.addItems(["Inventory", "Goal"])
-        self.view_combo.currentIndexChanged.connect(self.view_combo_changed)
+        self.view_combo.currentIndexChanged.connect(self._viewComboChanged)
         self.control_hbx.addWidget(self.view_combo)
 
         # a way to enter filters
         self.filter_entry = QLineEdit()
         self.filter_entry.setPlaceholderText("Filter text. . . ")
-        self.filter_entry.textChanged.connect(self.filterItems)
+        self.filter_entry.textChanged.connect(self._filterItems)
         self.control_hbx.addWidget(self.filter_entry)
 
         # filter clearing button
@@ -936,12 +936,12 @@ class DeepLarder(QMainWindow):
         self.inventory_table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.inventory_table.setSortingEnabled(True)
 
-        self.inventory_table.clicked.connect(self.selectionChanged)
-        self.inventory_table.doubleClicked.connect(self.showEdit)
+        self.inventory_table.clicked.connect(self._selectionChanged)
+        self.inventory_table.doubleClicked.connect(self._showEdit)
 
         self.layout.addWidget(self.inventory_table)
 
-        self.selectionChanged([])
+        self._selectionChanged([])
 
     def run(self):
         self.show()
