@@ -57,15 +57,18 @@ class ReportManagerDialog(QDialog):
 
     def delete(self, *args):
         for report in self.reports:
-            if report.title == self.report_combo.itemText(self.report_combo.currentIndex()):
+            if report.title == self.report_combo.itemText(
+                    self.report_combo.currentIndex()):
                 self.reports.remove(report)
                 self.report_combo.clear()
                 self.report_combo.addItems([report.title
-                                            for report in self.reports])
+                                            for report
+                                            in self.reports])
 
     def rename(self, *args):
         for report in self.reports:
-            if report.title == self.report_combo.itemText(self.report_combo.currentIndex()):
+            if report.title == self.report_combo.itemText(
+                    self.report_combo.currentIndex()):
                 id = QInputDialog(self)
                 id.setLabelText("New title:")
                 id.setTextValue(report.title)
@@ -74,14 +77,16 @@ class ReportManagerDialog(QDialog):
 
                 report.title = id.textValue()
 
-                self.report_combo.setItemText(self.report_combo.currentIndex(),
-                                              report.title)
+                self.report_combo.setItemText(
+                    self.report_combo.currentIndex(),
+                    report.title)
                 break
 
     def import_(self, *args):
         fd = QFileDialog(self, "Import report file")
         fd.setNameFilter("Report specifications (*.rpt)")
-        fd.setDefaultSuffix("rpt") # force new files to have .qm extension
+        fd.setDefaultSuffix("rpt") # force new files to have .qm
+                                   # extension
         fd.exec()
         fn = fd.selectedFiles()[0]
         

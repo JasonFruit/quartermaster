@@ -27,8 +27,9 @@ class InventoryListModel(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent, *args)
         
         # edit this if column definitions are changed
-        self.item_attribs = ['id', 'condition', 'description', 'amount',
-                             'life', 'purchase_date', 'expiration_date']
+        self.item_attribs = ['id', 'condition', 'description',
+                             'amount', 'life', 'purchase_date',
+                             'expiration_date']
         
         self.base_items = items # always contains all items
         self.items = items # sometimes reduced by filtering
@@ -46,7 +47,8 @@ class InventoryListModel(QAbstractTableModel):
         # whole thing died when I took this out!
         if not index.isValid():
             return None
-        elif role != Qt.DisplayRole: # for example, tooltips and the like
+        elif role != Qt.DisplayRole: # for example, tooltips and the
+                                     # like
             return None
 
         # get the attribute value from the row's item
@@ -67,12 +69,14 @@ class InventoryListModel(QAbstractTableModel):
 
     def set_filter(self, filter):
 
-        # let the control know it's about to see some changes around here
+        # let the control know it's about to see some changes around
+        # here
         self.emit(SIGNAL("layoutAboutToBeChanged()"))
         
         def item_contains(item, words):
             """returns True if the item contains all the words in the condition or
-            description (case-insensitive)"""
+            description (case-insensitive)
+            """
             retval = True
 
             for word in words:
@@ -118,20 +122,22 @@ class InventoryListModel(QAbstractTableModel):
         self.emit(SIGNAL("layoutChanged()"))
 
 class MultSpinner(QHBoxLayout):
-    """A HBox with a label and a numeric spinner control whose value is multiplied by <multiplier>"""
+    """An HBox with a label and a numeric spinner control whose value is
+    multiplied by <multiplier>"""
     def __init__(self, label, multiplier):
         QHBoxLayout.__init__(self)
-        self.multiplier = multiplier
+        self._multiplier = multiplier
         self.addWidget(QLabel(label))
-        self.spinner = QSpinBox()
-        self.addWidget(self.spinner)
+        self._spinner = QSpinBox()
+        self.addWidget(self._spinner)
     def value(self):
-        return self.spinner.value() * self.multiplier
+        return self._spinner.value() * self._multiplier
 
 
 class RationMultiplierDialog(QDialog):
     """A dialog for determining the multiplier for the base ration based
-    on family size and ages"""
+    on family size and ages
+    """
     def __init__(self, parent=None):
         QDialog.__init__(self, parent)
 
@@ -210,9 +216,11 @@ class InventoryItemDialog(QDialog):
 
     def format_goal(self, goal):
         if goal.condition == "":
-            return goal.description
+            dsc =  goal.description
         else:
-            return "%s (%s)" % (goal.description, goal.condition)
+            dsc = "%s (%s)" % (goal.description, goal.condition)
+
+        return dsc + ", " + goal.amount.to_string()
 
     def _addControls(self):
 
@@ -263,11 +271,13 @@ class InventoryItemDialog(QDialog):
 
     def _syncControlsToItem(self, *args):
         for i in range(self.goal_combo.count()):
-            if self.format_goal(self.item) == self.goal_combo.itemText(i):
+            if (self.format_goal(self.item) ==
+                self.goal_combo.itemText(i)):
                 self.goal_combo.setCurrentIndex(i)
 
         self.amount_text.setText(str(self.item.amount.number))
-        self.amount_combo.setCurrentIndex(self.amounts.index(self.item.amount.unit))
+        self.amount_combo.setCurrentIndex(
+            self.amounts.index(self.item.amount.unit))
         if self.item.purchase_date:
             self.purch_datepicker.setDate(QDate(
                 self.item.purchase_date.year,
@@ -298,7 +308,8 @@ class InventoryItemDialog(QDialog):
 
         self.item.amount = Measurement(
             int(self.amount_text.text()),
-            self.amount_combo.itemText(self.amount_combo.currentIndex()))
+            self.amount_combo.itemText(
+                self.amount_combo.currentIndex()))
 
         self.item.life = goal.life
 
@@ -318,7 +329,13 @@ class InventoryItemDialog(QDialog):
         
 class GoalDialog(QDialog):
     """A dialog to add or edit inventory items"""
-    def __init__(self, parent, conditions, amounts, durations, item=None):
+    def __init__(self,
+                 parent,
+                 conditions,
+                 amounts,
+                 durations,
+                 item=None):
+        
         QDialog.__init__(self, parent)
 
         self.item = item
@@ -341,12 +358,15 @@ class GoalDialog(QDialog):
 
     def _syncControlsToItem(self):
         """Make the controls match the current item"""
-        self.cond_combo.setCurrentIndex(self.conditions.index(self.item.condition))
+        self.cond_combo.setCurrentIndex(
+            self.conditions.index(self.item.condition))
         self.dsc_text.setText(self.item.description)
         self.amount_text.setText(str(self.item.amount.number))
-        self.amount_combo.setCurrentIndex(self.amounts.index(self.item.amount.unit))
+        self.amount_combo.setCurrentIndex(
+            self.amounts.index(self.item.amount.unit))
         self.life_text.setText(str(self.item.life.number))
-        self.life_combo.setCurrentIndex(self.durations.index(self.item.life.unit))
+        self.life_combo.setCurrentIndex(
+            self.durations.index(self.item.life.unit))
 
     def _syncItemToControls(self):
         """Update or create the item to match the user input"""
@@ -355,20 +375,24 @@ class GoalDialog(QDialog):
         if self.item: 
             self.item.condition = self.cond_combo.currentText()
             self.item.description = self.dsc_text.text()
-            self.item.amount = Measurement(int(self.amount_text.text()),
-                                           self.amounts[self.amount_combo.currentIndex()])
-            self.item.life = Measurement(int(self.life_text.text()),
-                                         self.durations[self.life_combo.currentIndex()])
+            self.item.amount = Measurement(
+                int(self.amount_text.text()),
+                self.amounts[self.amount_combo.currentIndex()])
+            self.item.life = Measurement(
+                int(self.life_text.text()),
+                self.durations[self.life_combo.currentIndex()])
             self.item.purchase_date = None
         else: # otherwise, create a new one
             self.item = InventoryItem(
                 None, # no ID until it's saved
                 self.cond_combo.currentText(),
                 self.dsc_text.text(),
-                Measurement(int(self.amount_text.text()),
-                            self.amounts[self.amount_combo.currentIndex()]),
-                Measurement(int(self.life_text.text()),
-                            self.durations[self.life_combo.currentIndex()]),
+                Measurement(
+                    int(self.amount_text.text()),
+                    self.amounts[self.amount_combo.currentIndex()]),
+                Measurement(
+                    int(self.life_text.text()),
+                    self.durations[self.life_combo.currentIndex()]),
                 None)
 
     def commit(self, *args, **kwargs):
@@ -497,8 +521,9 @@ class ReportDialog(QDialog):
         header = "".join(["<th align='left'>%s</th>" % col
                           for col in columns])
 
-        rows = "\n".join(["<tr>" + "".join(["<td>%s</td>" % datum
-                                           for datum in row])  + "</tr>"
+        rows = "\n".join(["<tr>" + "".join(
+            ["<td>%s</td>" % datum
+             for datum in row])  + "</tr>"
                           for row in data])
 
         html =  tmpl % {"title": title,
@@ -646,7 +671,8 @@ class DeepLarder(QMainWindow):
         
         self.filename = filename
         
-        self.setWindowTitle("Deep Larder (%s)" % os.path.basename(self.filename))
+        self.setWindowTitle(
+            "Deep Larder (%s)" % os.path.basename(self.filename))
         self.db = InventoryDB(self.filename)
 
         # cache some immutable information from the database
@@ -663,7 +689,8 @@ class DeepLarder(QMainWindow):
 
     def _showItems(self):
         """Show the items on the form"""
-        self.items = self.db.all_inventory(self.view_combo.currentText().lower())
+        self.items = self.db.all_inventory(
+            self.view_combo.currentText().lower())
         self._setModel()
         self._selectionChanged()
         
@@ -675,16 +702,18 @@ class DeepLarder(QMainWindow):
         """Show a file dialog to open a .qm file"""
 
         # open a file dialog at the last-used path
-        fn, _ = QFileDialog.getOpenFileName(self,
-                                            'Open file',
-                                            self.settings.value("save directory"),
-                                            "*.qm")
+        fn, _ = QFileDialog.getOpenFileName(
+            self,
+            'Open file',
+            self.settings.value("save directory"),
+            "*.qm")
 
         # if a file was chosen, open it
         if fn:
             # save the last file opened and its directory
             self.settings.setValue("last file", fn)
-            self.settings.setValue("save directory", os.path.dirname(fn))
+            self.settings.setValue(
+                "save directory", os.path.dirname(fn))
             
             self._loadFile(fn)
 
@@ -692,8 +721,10 @@ class DeepLarder(QMainWindow):
         """Show a file dialog to create a new .qm file"""
 
         fd = QFileDialog(self, "New file")
-        fd.setNameFilter("Inventory files (*.qm)") # show only .qm files
-        fd.setDefaultSuffix("qm") # force new files to have .qm extension
+        fd.setNameFilter("Inventory files (*.qm)") # show only .qm
+                                                   # files
+        fd.setDefaultSuffix("qm") # force new files to have .qm
+                                  # extension
         fd.exec()
         fn = fd.selectedFiles()[0]
         
@@ -701,7 +732,8 @@ class DeepLarder(QMainWindow):
         if fn:
             # save the last file opened and its directory
             self.settings.setValue("last file", fn)
-            self.settings.setValue("save directory", os.path.dirname(fn))
+            self.settings.setValue("save directory",
+                                   os.path.dirname(fn))
             
             self._loadFile(fn)
             self._setGoals()
@@ -725,6 +757,7 @@ class DeepLarder(QMainWindow):
         else: # if the dialog was canceled, let the user know no goals
             # were set
             mb = QMessageBox()
+            mb.setIcon(QMessageBox.Information)
             mb.setText("Goals not set.")
             mb.exec_()
 
@@ -795,7 +828,10 @@ class DeepLarder(QMainWindow):
 
         self.file_menu.addAction(self.exitAction)
 
-        self.setGoalAction = QAction(QIcon('set-goals.png'), 'Reset &goals', self)
+        self.setGoalAction = QAction(QIcon('set-goals.png'),
+                                     'Reset &goals',
+                                     self)
+        
         self.setGoalAction.setStatusTip('Reset inventory goals')
         self.setGoalAction.triggered.connect(self._setGoals)
 
@@ -804,25 +840,35 @@ class DeepLarder(QMainWindow):
         self.inventory_menu.addSeparator()
 
         
-        self.theAddAction = QAction(QIcon('add-can.png'), '&Add (Ctrl+I)', self)
+        self.theAddAction = QAction(QIcon('add-can.png'),
+                                    '&Add (Ctrl+I)',
+                                    self)
         self.theAddAction.setShortcut('Ctrl+I')
         self.theAddAction.triggered.connect(self._showAdd)
 
         self.inventory_menu.addAction(self.theAddAction)
         
-        self.deleteAction = QAction(QIcon('delete-can.png'), '&Delete (Ctrl+D)', self)
+        self.deleteAction = QAction(QIcon('delete-can.png'),
+                                    '&Delete (Ctrl+D)',
+                                    self)
         self.deleteAction.setShortcut('Ctrl+d')
         self.deleteAction.triggered.connect(self._deleteItem)
 
         self.inventory_menu.addAction(self.deleteAction)
 
-        self.editAction = QAction(QIcon('pencil.png'), '&Edit (Ctrl+E)', self)
+        self.editAction = QAction(QIcon('pencil.png'),
+                                  '&Edit (Ctrl+E)',
+                                  self)
+        
         self.editAction.setShortcut('Ctrl+e')
         self.editAction.triggered.connect(self._showEdit)
 
         self.inventory_menu.addAction(self.editAction)
 
-        self.fulfillAction = QAction(QIcon("fork.png"), "&Fulfill goal (Ctrl+G)", self)
+        self.fulfillAction = QAction(QIcon("fork.png"),
+                                     "&Fulfill goal (Ctrl+G)",
+                                     self)
+        
         self.fulfillAction.setShortcut("Ctrl+g")
         self.fulfillAction.triggered.connect(self._showClone)
 
@@ -837,8 +883,13 @@ class DeepLarder(QMainWindow):
 
         self.report_menu.addSeparator()
 
-        self.manageReportsAction = QAction(QIcon('reports.png'), '&Manage', self)
-        self.manageReportsAction.setStatusTip('Add, delete, and rename reports')
+        self.manageReportsAction = QAction(QIcon('reports.png'),
+                                           '&Manage',
+                                           self)
+        
+        self.manageReportsAction.setStatusTip(
+            'Add, delete, and rename reports')
+        
         self.manageReportsAction.triggered.connect(self._manageReports)
         
         self.report_menu.addAction(self.manageReportsAction)
@@ -896,7 +947,8 @@ class DeepLarder(QMainWindow):
         self.deleteAction.setEnabled(enable)
 
         view = self.view_combo.itemText(self.view_combo.currentIndex())
-        self.fulfillAction.setEnabled(enable and (view.lower() == "goal"))
+        self.fulfillAction.setEnabled(enable and
+                                      (view.lower() == "goal"))
         
     def _addControls(self):
         self.main_widget = QWidget()
@@ -914,7 +966,8 @@ class DeepLarder(QMainWindow):
         self.view_combo = QComboBox()
         self.view_combo.setMinimumWidth(200)
         self.view_combo.addItems(["Inventory", "Goal"])
-        self.view_combo.currentIndexChanged.connect(self._viewComboChanged)
+        self.view_combo.currentIndexChanged.connect(
+            self._viewComboChanged)
         self.control_hbx.addWidget(self.view_combo)
 
         # a way to enter filters
@@ -925,15 +978,21 @@ class DeepLarder(QMainWindow):
 
         # filter clearing button
         self.clear_btn = QPushButton("C&lear")
-        self.clear_btn.clicked.connect(lambda *args: self.filter_entry.setText(""))
+        self.clear_btn.clicked.connect(
+            lambda *args: self.filter_entry.setText(""))
+        
         self.control_hbx.addWidget(self.clear_btn)
 
         self.layout.addLayout(self.control_hbx)
 
         # the table showing inventory items or goals
         self.inventory_table = QTableView()
-        self.inventory_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.inventory_table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.inventory_table.setSelectionBehavior(
+            QAbstractItemView.SelectRows)
+        
+        self.inventory_table.setSelectionMode(
+            QAbstractItemView.SingleSelection)
+        
         self.inventory_table.setSortingEnabled(True)
 
         self.inventory_table.clicked.connect(self._selectionChanged)

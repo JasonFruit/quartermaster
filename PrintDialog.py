@@ -10,7 +10,8 @@ class PrintDialog(QDialog):
 
         self.orientations = [s
                              for s in dir(QPrinter.Orientation)
-                             if s != s.lower() and not s.startswith("_")]
+                             if s != s.lower() and
+                             not s.startswith("_")]
         self.addControls()
 
         self.setDefaults()
@@ -19,20 +20,23 @@ class PrintDialog(QDialog):
         self.layout = QVBoxLayout()
 
         self.printer_combo = QComboBox()
-        self.printer_combo.currentIndexChanged.connect(self.printerSelected)
+        self.printer_combo.currentIndexChanged.connect(
+            self.printerSelected)
         self.printer_combo.addItems([p.printerName()
                                      for p in self.printers])
         self.layout.addWidget(self.printer_combo)
 
         self.page_size_combo = QComboBox()
         self.page_size_combo.setEnabled(False)
-        self.page_size_combo.currentIndexChanged.connect(self.pageSizeChanged)
+        self.page_size_combo.currentIndexChanged.connect(
+            self.pageSizeChanged)
         self.printerSelected(self.printer_combo.currentIndex())
         self.layout.addWidget(self.page_size_combo)
         
         self.orientation_combo = QComboBox()
         self.orientation_combo.addItems(self.orientations)
-        self.orientation_combo.currentIndexChanged.connect(self.orientationChanged)
+        self.orientation_combo.currentIndexChanged.connect(
+            self.orientationChanged)
         self.layout.addWidget(self.orientation_combo)
 
         self.btn_box = QHBoxLayout()
@@ -57,9 +61,11 @@ class PrintDialog(QDialog):
             self.pageSizes.index(p.pageSize().name.decode("utf-8")))
 
         if self.printer.orientation() == QPrinter.Orientation.Landscape:
-            self.orientation_combo.setCurrentIndex(self.orientations.index("Landscape"))
+            self.orientation_combo.setCurrentIndex(
+                self.orientations.index("Landscape"))
         else:
-            self.orientation_combo.setCurrentIndex(self.orientations.index("Portrait"))    
+            self.orientation_combo.setCurrentIndex(
+                self.orientations.index("Portrait"))    
 
     def printerSelected(self, new_index):
         try:
@@ -70,7 +76,8 @@ class PrintDialog(QDialog):
             self.pageSizes = (
                 [s.name.decode("utf-8")
                  for s in self.currentPrinterInfo.supportedPaperSizes()
-                 if s.name.decode("utf-8") not in ["NPageSize", "NPaperSize"]])
+                 if s.name.decode("utf-8") not in ["NPageSize",
+                                                   "NPaperSize"]])
             self.page_size_combo.addItems(self.pageSizes)
             self.setDefaults()
         except AttributeError:
@@ -96,7 +103,8 @@ class PrintDialog(QDialog):
         elif sel == "Landscape":
             self.printer.setOrientation(QPrinter.Orientation.Landscape)
         else:
-            raise NotImplementedError("Orientation %s not implemented." % sel)
+            raise NotImplementedError(
+                "Orientation %s not implemented." % sel)
         
         self.accept()
 
