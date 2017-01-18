@@ -908,7 +908,11 @@ class DeepLarder(QMainWindow):
             self._addReportAction(rpt)
 
     def _manageReports(self, *args):
-        dic = json.loads(self.settings.value("reports"))
+        try:
+            dic = json.loads(self.settings.value("reports"))
+        except TypeError: # no content
+            dic = []
+            
         rpts = [Report.from_dict(d)
                 for d in dic]
         rmd = ReportManagerDialog(rpts, self)
