@@ -215,11 +215,11 @@ class InventoryDB(object):
         self.filename = path
         
         # read the SQL to create a database
-        with open("sql/create-db.sql", "r") as f:
+        with codecs.open("sql/create-db.sql", "r", "utf-8") as f:
             self.create_sql = f.read()
 
         # read the SQL to add goals
-        with codecs.open("sql/goal.sql") as f:
+        with codecs.open("sql/goal.sql", "r", "utf-8") as f:
             self.goal_sql = f.read()
 
         # if the database specified exists, connect
