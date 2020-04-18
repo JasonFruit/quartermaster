@@ -4,16 +4,12 @@ from datetime import datetime, timedelta
 import math
 import json
 
+# TODO: pare this down to what we actually need
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtWebKitWidgets import QWebView
-
-# # TODO: pare this down to what we actually need
-# from PySide.QtCore import *
-# from PySide.QtGui import *
-# from PySide.QtWebKit import QWebView
-from PrintDialog import PrintDialog
+from PyQt5.QtPrintSupport import QPrinterInfo, QPrinter, QPrintDialog
 
 from inventory import Measurement, InventoryDB, InventoryItem, Report
 from ReportManager import ReportManagerDialog
@@ -502,10 +498,10 @@ class ReportDialog(QDialog):
         self.webView.setHtml(self.html(title, columns, data))
 
     def print(self, *args):
-        dialog = PrintDialog()
+        dialog = QPrintDialog()
         if dialog.exec_() == QDialog.Accepted:
             print("printing report")
-            self.webView.print(dialog.printer)
+            self.webView.print(dialog.printer())
 
     def exec_(self):
         self.showMaximized()
