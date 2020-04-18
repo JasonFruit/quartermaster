@@ -9,7 +9,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtWebKitWidgets import QWebView
-from PyQt5.QtPrintSupport import QPrinterInfo, QPrinter, QPrintDialog
+from PyQt5.QtPrintSupport import QPrintDialog
 
 from inventory import Measurement, InventoryDB, InventoryItem, Report
 from ReportManager import ReportManagerDialog
@@ -72,7 +72,7 @@ class InventoryListModel(QAbstractTableModel):
 
         # let the control know it's about to see some changes around
         # here
-        self.emit(SIGNAL("layoutAboutToBeChanged()"))
+        self.layoutAboutToBeChanged.emit()
         
         def item_contains(item, words):
             """returns True if the item contains all the words in the condition or
@@ -97,7 +97,7 @@ class InventoryListModel(QAbstractTableModel):
                           for item in self.base_items
                           if item_contains(item, words)]
             
-        self.emit(SIGNAL("layoutChanged()")) # tell the control to refresh
+        self.layoutChanged.emit()
         
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -109,7 +109,7 @@ class InventoryListModel(QAbstractTableModel):
     
     def sort(self, col, order):
         
-        self.emit(SIGNAL("layoutAboutToBeChanged()"))
+        self.layoutAboutToBeChanged.emit()
 
         # get the attribute name to sort by
         attrib = self.item_attribs[col]
@@ -120,7 +120,7 @@ class InventoryListModel(QAbstractTableModel):
         if order == Qt.DescendingOrder:
             self.items.reverse()
             
-        self.emit(SIGNAL("layoutChanged()"))
+        self.layoutChanged.emit()
 
 class MultSpinner(QHBoxLayout):
     """An HBox with a label and a numeric spinner control whose value is
