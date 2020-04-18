@@ -14,10 +14,12 @@ from PyQt5.QtPrintSupport import QPrintDialog
 from inventory import Measurement, InventoryDB, InventoryItem, Report
 from ReportManager import ReportManagerDialog
 
+app_name = "The Quartermaster"
+
 # set up the QT application properties
 qt_app = QApplication(sys.argv)
 qt_app.setOrganizationName("Jason R. Fruit")
-qt_app.setApplicationName("Deep Larder")
+qt_app.setApplicationName(app_name)
 
 # use a human-readable settings filetype
 QSettings.setDefaultFormat(QSettings.IniFormat)
@@ -133,6 +135,8 @@ class MultSpinner(QHBoxLayout):
         self.addWidget(self._spinner)
     def value(self):
         return self._spinner.value() * self._multiplier
+    def setValue(self, value):
+        self._spinner.setValue(value)
 
 
 class RationMultiplierDialog(QDialog):
@@ -152,6 +156,8 @@ class RationMultiplierDialog(QDialog):
 
         # the multiplier is the ratio of food consumption to that of
         # an adult male
+
+        self.layout.addWidget(QLabel("Describe your group and the number of months' supply you want to maintain."))
         
         # TODO: put this in the database
         self.adult_males = MultSpinner("Adult males:", 1.0)
@@ -164,6 +170,9 @@ class RationMultiplierDialog(QDialog):
         self.layout.addLayout(self.child_4_6)
         self.child_7_9 = MultSpinner("Children ages 7-9", 0.75)
         self.layout.addLayout(self.child_7_9)
+        self.month_count = MultSpinner("Months", 1.0/12.0)
+        self.month_count.setValue(12)
+        self.layout.addLayout(self.month_count)
 
         self.btn_hbox = QHBoxLayout()
         
@@ -186,7 +195,7 @@ class RationMultiplierDialog(QDialog):
                           self.adult_females.value(),
                           self.child_1_3.value(),
                           self.child_4_6.value(),
-                          self.child_7_9.value()])
+                          self.child_7_9.value()]) * self.month_count.value()
         self.close()
 
 class InventoryItemDialog(QDialog):
@@ -545,7 +554,7 @@ class DeepLarder(QMainWindow):
         # .ini file for settings
         self.settings = QSettings()
         
-        self.setWindowTitle("Deep Larder")
+        self.setWindowTitle(app_name)
 
         # any narrower than this won't really work
         self.setMinimumWidth(400)
@@ -673,7 +682,7 @@ class DeepLarder(QMainWindow):
         self.filename = filename
         
         self.setWindowTitle(
-            "Deep Larder (%s)" % os.path.basename(self.filename))
+            "%s (%s)" % (app_name, os.path.basename(self.filename)))
         self.db = InventoryDB(self.filename)
 
         # cache some immutable information from the database
