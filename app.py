@@ -4,10 +4,15 @@ from datetime import datetime, timedelta
 import math
 import json
 
-# TODO: pare this down to what we actually need
-from PySide.QtCore import *
-from PySide.QtGui import *
-from PySide.QtWebKit import QWebView
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtWebKitWidgets import QWebView
+
+# # TODO: pare this down to what we actually need
+# from PySide.QtCore import *
+# from PySide.QtGui import *
+# from PySide.QtWebKit import QWebView
 from PrintDialog import PrintDialog
 
 from inventory import Measurement, InventoryDB, InventoryItem, Report

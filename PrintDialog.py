@@ -1,4 +1,5 @@
-from PySide.QtGui import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 class PrintDialog(QDialog):
     def __init__(self, parent=None):

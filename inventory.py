@@ -203,9 +203,13 @@ class InventoryItem(object):
         elif self.life.unit == "day":
             return self.purchase_date + timedelta(self.life.number)
     def to_string(self):
-        return "%s (%s), %s" % (self.description,
-                                self.condition,
-                                self.amount.to_string())
+        if self.condition.strip() != "":
+            return "%s (%s), %s" % (self.description,
+                                    self.condition,
+                                    self.amount.to_string())
+        else:
+            return "%s, %s" % (self.description,
+                               self.amount.to_string())
 
         
 class InventoryDB(object):
