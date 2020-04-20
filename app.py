@@ -79,6 +79,7 @@ class InventoryListModel(QAbstractTableModel):
         def item_contains(item, words):
             """returns True if the item contains all the words in the condition or
             description (case-insensitive)
+
             """
             retval = True
 
@@ -146,8 +147,9 @@ class RationMultiplierDialog(QDialog):
     """A dialog for determining the multiplier for the base ration based
     on family size and ages
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, db=None):
         QDialog.__init__(self, parent)
+        self.db = db
 
         self.setWindowTitle("Family Size")
 
@@ -157,23 +159,21 @@ class RationMultiplierDialog(QDialog):
 
         self.layout = QVBoxLayout(self)
 
-        self.layout.addWidget(QLabel("Describe your group and the number of months' supply you want to maintain."))
+        self.layout.addWidget(QLabel("Describe your group and the " +
+                                     "number of months' supply you want " +
+                                     "to maintain."))
         
         # default goals are determined by family member age and gender
         # and duration of supply; the multiplier is the ratio of food
         # consumption to that of an adult male
 
-        # TODO: retrieve this from the database
-        self.adult_males = MultSpinner("Adult males:", 1.0)
-        self.layout.addLayout(self.adult_males)
-        self.adult_females = MultSpinner("Adult females:", 0.75)
-        self.layout.addLayout(self.adult_females)
-        self.child_1_3 = MultSpinner("Children ages 1-3", 0.3)
-        self.layout.addLayout(self.child_1_3)
-        self.child_4_6 = MultSpinner("Children ages 4-6", 0.5)
-        self.layout.addLayout(self.child_4_6)
-        self.child_7_9 = MultSpinner("Children ages 7-9", 0.75)
-        self.layout.addLayout(self.child_7_9)
+        self.mult_spinners = []
+
+        for key in self.db.ration_multipliers.keys():
+            ms = MultSpinner(key, self.db.ration_multipliers[key])
+            self.layout.addLayout(ms)
+            self.mult_spinners.append(ms)
+        
         self.month_count = MultSpinner("Months", 1.0/12.0)
         self.month_count.setValue(12)
         self.layout.addLayout(self.month_count)
@@ -195,11 +195,9 @@ class RationMultiplierDialog(QDialog):
     def commit(self, *args):
         """Runs when OK is clicked"""
         self.canceled = False
-        self.value = sum([self.adult_males.value(),
-                          self.adult_females.value(),
-                          self.child_1_3.value(),
-                          self.child_4_6.value(),
-                          self.child_7_9.value()]) * self.month_count.value()
+        self.value = (sum([ms.value()
+                          for ms in self.mult_spinners]) *
+                      self.month_count.value())
         self.close()
 
 class InventoryItemDialog(QDialog):
@@ -756,7 +754,7 @@ class DeepLarder(QMainWindow):
 
     def _getRationNumber(self):
         """Show a dialog to determine base ration multiplier and return it"""
-        dlg = RationMultiplierDialog(self)
+        dlg = RationMultiplierDialog(self, self.db)
         dlg.exec()
         return dlg.value
 
