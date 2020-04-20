@@ -257,6 +257,11 @@ class InventoryDB(object):
         for row in self.cur.fetchall():
             self.durations[row[1]] = row[0]
 
+        self.ration_multipliers = {}
+        self.cur.execute("select description, multiplier from ration_multipliers")
+        for row in self.cur.fetchall():
+            self.ration_multipliers[row[0]] = row[1]
+
     def set_goals(self, mult):
         """Set goals by multiplying the recommendation for an adult male by
         <mult>"""

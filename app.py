@@ -98,7 +98,8 @@ class InventoryListModel(QAbstractTableModel):
             self.items = [item
                           for item in self.base_items
                           if item_contains(item, words)]
-            
+
+        # let the control know it's time to update
         self.layoutChanged.emit()
         
     def headerData(self, col, orientation, role):
@@ -110,7 +111,8 @@ class InventoryListModel(QAbstractTableModel):
         return None
     
     def sort(self, col, order):
-        
+
+        # notify the control changes will occur
         self.layoutAboutToBeChanged.emit()
 
         # get the attribute name to sort by
@@ -121,7 +123,8 @@ class InventoryListModel(QAbstractTableModel):
                             key=lambda s: getattr(s, attrib))
         if order == Qt.DescendingOrder:
             self.items.reverse()
-            
+
+        # tell control to refresh
         self.layoutChanged.emit()
 
 class MultSpinner(QHBoxLayout):
@@ -154,12 +157,13 @@ class RationMultiplierDialog(QDialog):
 
         self.layout = QVBoxLayout(self)
 
-        # the multiplier is the ratio of food consumption to that of
-        # an adult male
-
         self.layout.addWidget(QLabel("Describe your group and the number of months' supply you want to maintain."))
         
-        # TODO: put this in the database
+        # default goals are determined by family member age and gender
+        # and duration of supply; the multiplier is the ratio of food
+        # consumption to that of an adult male
+
+        # TODO: retrieve this from the database
         self.adult_males = MultSpinner("Adult males:", 1.0)
         self.layout.addLayout(self.adult_males)
         self.adult_females = MultSpinner("Adult females:", 0.75)

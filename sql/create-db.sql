@@ -37,6 +37,22 @@ INSERT INTO "recordtype" VALUES(1,'recommendation');
 INSERT INTO "recordtype" VALUES(2,'goal');
 INSERT INTO "recordtype" VALUES(3,'inventory');
 
+CREATE TABLE ration_multipliers (
+    id integer not null primary key,
+    description text not null,
+    multiplier float not null
+);
+
+insert into ration_multipliers (
+    description,
+    multiplier
+)
+values ('Adult males', 1.0),
+('Adult females', 0.75),
+('Children ages 1-3', 0.3),
+('Children ages 4-6', 0.5),
+('Children ages 7-9', 0.75);
+
 CREATE TABLE item (
     id integer not null primary key,
     condition_id integer,
